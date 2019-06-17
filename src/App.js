@@ -68,6 +68,13 @@ class FlashCardApp extends React.Component {
     if (this.state.firstTimeTyping)
       this.setState({ firstTimeTyping: false });
 
+    if (event.key == "Enter" || event.key == " ") {
+      if (this.state.justRevealed)
+        this.resetInputAfterReveal();
+      else
+        this.showAnswer();
+    }
+
     let curText = this.state.typed;
     let isLetter = /^\w$/;
     if (event.key === "Backspace") {
@@ -100,6 +107,10 @@ class FlashCardApp extends React.Component {
   }
 
   reportCorrectness() {
+    // Don't accept input if card gets revealed
+    if (this.state.justRevealed)
+      return;
+
     let answer = this.state.currentCard.back;
     let typed = this.state.typed.toLowerCase();
 
