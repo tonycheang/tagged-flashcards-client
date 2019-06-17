@@ -1,19 +1,19 @@
 self.__precacheManifest = (self.__precacheManifest || []).concat([
   {
-    "revision": "efc579fda92e6bc7ef6a1ba8c383d771",
+    "revision": "b05eee78e53dcd352fe02240de97f849",
     "url": "/japanese-flash-cards/index.html"
   },
   {
-    "revision": "a0bcb360b190b6e8dbc4",
+    "revision": "db3174d599eb163563d5",
     "url": "/japanese-flash-cards/static/css/main.34de6062.chunk.css"
   },
   {
-    "revision": "2790c44532533aa1f119",
-    "url": "/japanese-flash-cards/static/js/2.2668f2aa.chunk.js"
+    "revision": "5b707dfdc368f03b6e15",
+    "url": "/japanese-flash-cards/static/js/2.7fec506e.chunk.js"
   },
   {
-    "revision": "a0bcb360b190b6e8dbc4",
-    "url": "/japanese-flash-cards/static/js/main.7276b4b4.chunk.js"
+    "revision": "db3174d599eb163563d5",
+    "url": "/japanese-flash-cards/static/js/main.01e1b488.chunk.js"
   },
   {
     "revision": "bdce2934d99eea959ece",
