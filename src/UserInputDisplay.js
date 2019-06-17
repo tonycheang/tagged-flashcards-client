@@ -1,11 +1,21 @@
 import React from 'react';
 
 class UserInputDisplay extends React.Component {
-    render(){
+    constructor(props){
+        super(props);
+        this.inputFieldStyle = {
+            backgroundColor: this.props.backgroundColor, 
+            border: "none",
+            color: this.props.textColor, 
+            margin: "20px", 
+            fontSize: 20,
+            textAlign: "center"
+        }
+    }
+    render() {
         return (
-            <div minheight="20%" style={{color: this.props.textColor, margin: "20px", fontSize: 20}}>
-                    {this.props.data === "" ? '\u00A0' : this.props.data}
-            </div>
+            <input autoFocus placeholder={this.props.defaultText} value={this.props.data} style={this.inputFieldStyle}>
+            </input>
         )
     }
 }

@@ -20,7 +20,7 @@ class FlashCardApp extends React.Component {
       'sa', 'shi', 'su', 'se', 'so',
       'ta', 'chi', 'tsu', 'te', 'to',
       'na', 'ni', 'nu', 'ne', 'no',
-      'ha', 'hi', 'hu', 'he', 'ho',
+      'ha', 'hi', 'fu', 'he', 'ho',
       'ma', 'mi', 'mu', 'me', 'mo',
       'ya', 'yu', 'yo',
       'ra', 'ri', 'ru', 're', 'ro',
@@ -38,13 +38,13 @@ class FlashCardApp extends React.Component {
       'わ', 'を', 'ん'
     ];
     this.cards = hirgana.map((char, i) => new Card(char, phonetic[i]));
-    this.startText = "type the phoentic translation";
     this.state = {
       currentCard: this.cards[Math.floor(this.cards.length * Math.random())],
       showFront: true,
-      typed: this.startText,
-      textColor: "rgba(230, 230, 230, 0.3)",
-      backgroundColor: this.defaultColor
+      typed: "",
+      textColor: "#000000",
+      backgroundColor: this.defaultColor,
+      firstTimeTyping: true
     }
   }
 
@@ -53,12 +53,12 @@ class FlashCardApp extends React.Component {
   }
 
   componentWillUnmount() {
-    window.removeEventListener("keydown", this.handleInput)
+    window.removeEventListener("keydown", this.handleInput);
   }
 
   handleInput(event) {
-    if (this.state.typed === this.startText)
-      this.setState({ typed: "", textColor: "#000000" });
+    if (this.state.firstTimeTyping)
+      this.setState({firstTimeTyping: false});
 
     let curText = this.state.typed;
     let isLetter = /^\w$/;
@@ -76,7 +76,7 @@ class FlashCardApp extends React.Component {
 
   reportCorrectness() {
     let answer = this.state.currentCard.back;
-    let typed = this.state.typed;
+    let typed = this.state.typed.toLowerCase();
 
     // Don't report if the first few characters are correct
     if (typed.length < answer.length) {
@@ -84,7 +84,7 @@ class FlashCardApp extends React.Component {
         return
     }
 
-    if (this.state.typed === this.state.currentCard.back) {
+    if (typed === this.state.currentCard.back) {
       this.setState({ backgroundColor: "#00BB00" });
       this.setState({
         currentCard: this.cards[Math.floor(this.cards.length * Math.random())],
@@ -101,14 +101,18 @@ class FlashCardApp extends React.Component {
   render() {
     let card = this.state.currentCard;
     let displayData = this.state.showFront ? card.front : card.back;
-
+    let defaultText = this.state.firstTimeTyping ? "type the phonetic translation" : "";
     return (
-      <div align="center" className="App" style={{ backgroundColor: this.state.backgroundColor, margin: "10px" }}>
+      <div align="center" style={{ backgroundColor: this.state.backgroundColor, margin: "10px", touchAction:"none" }}>
         <header style={{fontSize: 20}}>
           A Flash Card Mini-Game for Hiragana
         </header>
         <CardDisplay data={displayData}></CardDisplay>
-        <UserInputDisplay data={this.state.typed} textColor={this.state.textColor}></UserInputDisplay>
+        <UserInputDisplay data={this.state.typed}
+          defaultText={defaultText} 
+          textColor={this.state.textColor}
+          backgroundColor={this.state.backgroundColor}>
+          </UserInputDisplay>
       </div>
     )
   };
