@@ -1,7 +1,8 @@
 import React from 'react';
 import CardDisplay from './CardDisplay';
 import UserInputDisplay from './UserInputDisplay';
-import Button from './Button'
+import Button from 'antd/es/button'
+import './App.css';
 
 class Card {
   constructor(front, back) {
@@ -21,7 +22,7 @@ class FlashCardApp extends React.Component {
     this.resetInputAfterTyping = this.resetInput.bind(this, 500);
     this.resetInputAfterReveal = this.resetInput.bind(this, 0, true);
 
-    this.defaultColor = "#888888"
+    this.defaultBackgroundColor = "#FFFFFF"
     const phonetic = ['a', 'i', 'u', 'e', 'o',
       'ka', 'ki', 'ku', 'ke', 'ko',
       'sa', 'shi', 'su', 'se', 'so',
@@ -45,13 +46,15 @@ class FlashCardApp extends React.Component {
       'わ', 'を', 'ん'
     ];
     this.cards = hirgana.map((char, i) => new Card(char, phonetic[i]));
-    
+
+    // NOTE: show front essentially unused!
     this.state = {
       currentCard: this.cards[Math.floor(this.cards.length * Math.random())],
       showFront: true,
       typed: "",
       textColor: "#000000",
-      backgroundColor: this.defaultColor,
+      backgroundColor: this.defaultBackgroundColor,
+      border: "1px solid",
       firstTimeTyping: true
     }
   }
@@ -68,7 +71,7 @@ class FlashCardApp extends React.Component {
     if (this.state.firstTimeTyping)
       this.setState({ firstTimeTyping: false });
 
-    if (event.key == "Enter" || event.key == " ") {
+    if (event.key === "Enter" || event.key === " ") {
       if (this.state.justRevealed)
         this.resetInputAfterReveal();
       else
@@ -94,20 +97,24 @@ class FlashCardApp extends React.Component {
     this.setState({ typingTimer: setTimeout(this.reportCorrectness, 300) });
   }
 
-  readForm(event){
+  readForm(event) {
     // Temp holder while using window.addEventListener("keydown", this.handleInput);
     // console.log(event.target.value);
   }
 
-  showAnswer(){
+  showAnswer(event) {
+    // event.preventDefault();
+    // event.stopPropagation();
     if (this.state.firstTimeTyping)
       this.setState({ firstTimeTyping: false });
 
-    this.setState({justRevealed: true, typed: this.state.currentCard.back})
+    this.setState({ justRevealed: true, typed: this.state.currentCard.back })
   }
 
   reportCorrectness() {
-    // Don't accept input if card gets revealed
+    /* Flashes red or green on the page depending on input correctness */
+
+    // Don't accept input if card got revealed
     if (this.state.justRevealed)
       return;
 
@@ -121,51 +128,64 @@ class FlashCardApp extends React.Component {
     }
 
     if (typed === this.state.currentCard.back) {
-      this.setState({ backgroundColor: "#00BB00" });
+      this.setState({ backgroundColor: "#f6ffed", border: "1px solid #b7eb8f" });
       this.resetInputAfterTyping(true);
     } else {
-      this.setState({ backgroundColor: "#BB0000" });
+      this.setState({ backgroundColor: "#fff1f0", border: "1px solid #ffa39e" });
       this.resetInputAfterTyping(false);
     }
   }
 
-  resetInput(time=0, nextCard){
+  resetInput(delay, nextCard) {
+    /* Used to create partial functions via method.bind() for callback */
     if (nextCard) {
       this.setState({
         currentCard: this.cards[Math.floor(this.cards.length * Math.random())],
         typed: ""
       })
     }
-    setTimeout(() => this.setState({ backgroundColor: this.defaultColor }), time)
-    this.setState({ typed: "", typingTimer: null , justRevealed: false});
+    setTimeout(() => this.setState({ backgroundColor: this.defaultBackgroundColor, border: "1px solid" }), delay)
+    this.setState({ typed: "", typingTimer: null, justRevealed: false });
   }
 
   render() {
     let card = this.state.currentCard;
     let displayData = this.state.showFront ? card.front : card.back;
     let defaultText = this.state.firstTimeTyping ? "type the phonetic translation" : "";
+
     let displayButton;
     if (this.state.justRevealed)
-      displayButton = <Button text="continue" onClick={this.resetInputAfterReveal}></Button>;
+      displayButton = <Button type="default" onClick={this.resetInputAfterReveal} style={{backgroundColor: "transparent"}}>continue</Button>;
     else
-      displayButton = <Button text="show" onClick={this.showAnswer}></Button>
+      displayButton = <Button type="default" onClick={this.showAnswer} style={{backgroundColor: "transparent"}}>show</Button>
+
+    this.userInputDisplay = <UserInputDisplay data={this.state.typed}
+      defaultText={defaultText}
+      textColor={this.state.textColor}
+      onChange={this.readForm}>
+    </UserInputDisplay>;
 
     return (
-      <div align="center" style={{ backgroundColor: this.state.backgroundColor, margin: "10px", touchAction: "none" }}>
-        
-        <header style={{ fontSize: 20 }}>
-          A Flash Card Mini-Game for Hiragana
-        </header>
+      <div align="center">
+        <div style={{
+          backgroundColor: this.state.backgroundColor,
+          width: "50%",
+          padding: "2%",
+          border: this.state.border,
+          borderRadius: "25px",
+          margin: "10px",
+          touchAction: "none"
+        }}>
 
-        <CardDisplay data={displayData}></CardDisplay>
-        <UserInputDisplay data={this.state.typed}
-          defaultText={defaultText}
-          textColor={this.state.textColor}
-          backgroundColor={this.state.backgroundColor}
-          onChange={this.readForm}>
-        </UserInputDisplay>
-        <div>{displayButton}</div>
+          <header style={{ fontSize: 20 }}>
+            A Flash Card Mini-Game for Hiragana
+          </header>
 
+          <CardDisplay data={displayData}></CardDisplay>
+          {this.userInputDisplay}
+          <div>{displayButton}</div>
+
+        </div>
       </div>
     )
   };
