@@ -50,7 +50,6 @@ class FlashCardApp extends React.Component {
     // NOTE: show front essentially unused!
     this.state = {
       currentCard: this.cards[Math.floor(this.cards.length * Math.random())],
-      showFront: true,
       typed: "",
       textColor: "#000000",
       backgroundColor: this.defaultBackgroundColor,
@@ -150,39 +149,33 @@ class FlashCardApp extends React.Component {
 
   render() {
     let card = this.state.currentCard;
-    let displayData = this.state.showFront ? card.front : card.back;
     let defaultText = this.state.firstTimeTyping ? "type the phonetic translation" : "";
 
     let displayButton;
     if (this.state.justRevealed)
-      displayButton = <Button type="default" onClick={this.resetInputAfterReveal} style={{backgroundColor: "transparent"}}>continue</Button>;
+      displayButton = <Button type="default" onClick={this.resetInputAfterReveal} 
+        style={{backgroundColor: "transparent", margin: "2%"}}>continue</Button>;
     else
-      displayButton = <Button type="default" onClick={this.showAnswer} style={{backgroundColor: "transparent"}}>show</Button>
-
-    this.userInputDisplay = <UserInputDisplay data={this.state.typed}
-      defaultText={defaultText}
-      textColor={this.state.textColor}
-      onChange={this.readForm}>
-    </UserInputDisplay>;
+      displayButton = <Button type="default" onClick={this.showAnswer} 
+        style={{backgroundColor: "transparent", margin: "2%"}}>show</Button>
 
     return (
       <div align="center">
-        <div style={{
+        <div class="Card" style={{
           backgroundColor: this.state.backgroundColor,
-          width: "50%",
-          padding: "2%",
           border: this.state.border,
-          borderRadius: "25px",
-          margin: "10px",
-          touchAction: "none"
         }}>
 
           <header style={{ fontSize: 20 }}>
-            A Flash Card Mini-Game for Hiragana
+            A Flash Card Mini-Game for Japanese
           </header>
 
-          <CardDisplay data={displayData}></CardDisplay>
-          {this.userInputDisplay}
+          <CardDisplay data={card.front}></CardDisplay>
+          <UserInputDisplay data={this.state.typed}
+            defaultText={defaultText}
+            textColor={this.state.textColor}
+            onChange={this.readForm}>
+          </UserInputDisplay>
           <div>{displayButton}</div>
 
         </div>
