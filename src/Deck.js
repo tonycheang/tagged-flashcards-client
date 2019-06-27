@@ -125,18 +125,18 @@ export function buildDefaultDeck(activeTags) {
     ];
     let voicedHiragana = hiraganaDakuOn.map((char, i) => new Card(char, hiraganaDakuOnPhonetic[i], ["voiced hiragana"]));
 
+    // const yoOnPhoenetic;
+    // const yoOn;
+    // let contractedHiragana;
+
+    // const katakanaSeiOnPhonetic;
+    // const katakanaSeiOn;
+    // let basicKatakana;
+
+    // Insert katakanaDakuOn, katakanaYoOn, katakanaForeign
+
     let defaultDeck = new Deck(basicHiragana);
     voicedHiragana.forEach((card) => { defaultDeck.append(card) });
     defaultDeck.rebuildActive(activeTags);
     return defaultDeck;
 }
-
-// const yoOnPhoenetic;
-// const yoOn;
-// let contractedHiragana;
-
-// const katakanaSeiOnPhonetic;
-// const katakanaSeiOn;
-// let basicKatakana;
-
-// Insert katakanaDakuOn, katakanaYoOn, katakanaForeign

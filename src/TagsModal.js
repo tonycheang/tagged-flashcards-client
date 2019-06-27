@@ -11,6 +11,7 @@ class TagsModal extends React.Component {
         this.tagsStatuses = {};
 
         // Populate values from local storage, if they exist.
+        
         Object.keys(this.props.tags).forEach((tag) => {
             let defaultToggle = window.localStorage.getItem(tag);
             if (defaultToggle) {
@@ -21,6 +22,11 @@ class TagsModal extends React.Component {
                 this.tagsStartingStatuses[tag] = false;
             }
         });
+
+        if (Object.keys(window.localStorage).length === 0) {
+            this.tagsStartingStatuses["basic hiragana"] = true;
+            this.tagsStatuses["basic hiragana"] = true;
+        }
 
         this.columns = [
             {
@@ -61,12 +67,14 @@ class TagsModal extends React.Component {
             let activeTags = Object.keys(this.tagsStatuses).filter((tag) => {
                 return this.tagsStatuses[tag];
             });
-            this.props.deck.rebuildActive(activeTags);
+            this.props.rebuildActive(activeTags);
 
             // Record the changes in local storage
             Object.entries(this.tagsStatuses).forEach(([tag, active]) => {
                 window.localStorage.setItem(tag, active);
             })
+
+            this.props.changeCard();
             message.success("Deck rebuilt!");
         }
 
@@ -74,6 +82,7 @@ class TagsModal extends React.Component {
     }
 
     render() {
+        // Make for ALL tags.
         let dataSource = Object.keys(this.props.tags).map((tag, i) => {
             return { key: i, tag: tag }
         });

@@ -12,9 +12,25 @@ class Site extends React.Component {
         this.closeMenu = this.closeMenu.bind(this);
         this.selectMenuItem = this.selectMenuItem.bind(this);
         this.closeModal = this.closeModal.bind(this);
+        this.changeCard = this.changeCard.bind(this);
 
-        this.deck = buildDefaultDeck(["basic hiragana"]);
+        this.startingActive = [];
+
+        // Load existing values if they're there.
+        if (Object.keys(window.localStorage).length === 0) {
+            this.startingActive.push("basic hiragana");
+        } else {
+            Object.keys(window.localStorage).forEach((tag) => {
+                console.log(tag)
+                let active = window.localStorage.getItem(tag);
+                if (active) this.startingActive.push(tag);
+            });
+        }
+        
+        this.deck = buildDefaultDeck(this.startingActive);
+
         this.state = {
+            currentCard: this.deck.getNextCard(),
             menuOpen: false,
             selected: ""
         }
@@ -54,23 +70,27 @@ class Site extends React.Component {
         this.setState({ selected: event.key })
     }
 
-    rebuildDeck(activeTags) {
-        this.deck.rebuildActive(activeTags);
+    changeCard(){
+        this.setState({currentCard: this.deck.getNextCard()});
     }
 
     render() {
         return (
             <div>
                 {this.navBar}
-                <TagsModal tags={this.deck.tags}
+                <TagsModal 
+                    startingActive={this.startingActive}
+                    tags={this.deck.tags}
                     closeModal={this.closeModal}
-                    deck={this.deck}
+                    rebuildActive={(activeTags)=>{this.deck.rebuildActive(activeTags)}}
+                    changeCard={this.changeCard}
                     visible={this.state.selected === "tags"}>
                 </TagsModal>
                 <div style={{ marginTop: "1%" }}>
                     <header> Flash Cards for Japanese </header>
                 </div>
-                <FlashCardApp deck={this.deck}></FlashCardApp>
+                <FlashCardApp currentCard={this.state.currentCard} 
+                    changeCard={this.changeCard}></FlashCardApp>
             </div>
         )
     }

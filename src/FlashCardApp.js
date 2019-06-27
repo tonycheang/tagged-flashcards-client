@@ -15,10 +15,9 @@ class FlashCardApp extends React.Component {
     this.resetInputAfterTyping = this.resetInput.bind(this, 500);
     this.resetInputAfterReveal = this.resetInput.bind(this, 0, true);
 
-    this.defaultBackgroundColor = "#FFFFFF"
+    this.defaultBackgroundColor = "#FFFFFF";
 
     this.state = {
-      currentCard: this.props.deck.getNextCard(),
       typed: "",
       textColor: "#000000",
       backgroundColor: this.defaultBackgroundColor,
@@ -76,7 +75,7 @@ class FlashCardApp extends React.Component {
     if (this.state.firstTimeTyping)
       this.setState({ firstTimeTyping: false });
 
-    this.setState({ justRevealed: true, typed: this.state.currentCard.back })
+    this.setState({ justRevealed: true, typed: this.props.currentCard.back })
   }
 
   reportCorrectness() {
@@ -86,7 +85,7 @@ class FlashCardApp extends React.Component {
     if (this.state.justRevealed)
       return;
 
-    let currentCard = this.state.currentCard;
+    let currentCard = this.props.currentCard;
     let answer = currentCard.back;
     let typed = this.state.typed.toLowerCase();
 
@@ -108,18 +107,16 @@ class FlashCardApp extends React.Component {
   resetInput(delay, nextCard) {
     /* Used to create partial functions via method.bind() for callback */
     if (nextCard) {
-      this.setState({
-        currentCard: this.props.deck.getNextCard(),
-        typed: ""
-      })
+      this.setState({typed: ""})
+      this.props.changeCard();
     }
     setTimeout(() => this.setState({ backgroundColor: this.defaultBackgroundColor, border: "1px solid" }), delay)
     this.setState({ typed: "", typingTimer: null, justRevealed: false });
   }
 
   render() {
-    let card = this.state.currentCard;
-    if (card.front == "No active cards!")
+    let card = this.props.currentCard;
+    if (card.front === "No active cards!")
       card.front = <Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
 
     let defaultText = this.state.firstTimeTyping ? "type the phonetic translation" : "";
@@ -138,7 +135,6 @@ class FlashCardApp extends React.Component {
           backgroundColor: this.state.backgroundColor,
           border: this.state.border,
         }}>
-
           <CardDisplay data={card.front}></CardDisplay>
           <UserInputDisplay data={this.state.typed}
             defaultText={defaultText}
