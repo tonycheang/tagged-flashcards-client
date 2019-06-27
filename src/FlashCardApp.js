@@ -1,7 +1,7 @@
 import React from 'react';
 import CardDisplay from './CardDisplay';
 import UserInputDisplay from './UserInputDisplay';
-import Button from 'antd/es/button'
+import { Button, Empty } from 'antd'
 import './FlashCardApp.css';
 
 class FlashCardApp extends React.Component {
@@ -16,8 +16,6 @@ class FlashCardApp extends React.Component {
     this.resetInputAfterReveal = this.resetInput.bind(this, 0, true);
 
     this.defaultBackgroundColor = "#FFFFFF"
-
-    console.log(this.props.deck);
 
     this.state = {
       currentCard: this.props.deck.getNextCard(),
@@ -88,16 +86,17 @@ class FlashCardApp extends React.Component {
     if (this.state.justRevealed)
       return;
 
-    let answer = this.state.currentCard.back;
+    let currentCard = this.state.currentCard;
+    let answer = currentCard.back;
     let typed = this.state.typed.toLowerCase();
 
     // Don't report if the first few characters are correct
     if (typed.length < answer.length) {
-      if (typed === answer.slice(0, typed.length))
-        return
+      if (currentCard.startsWith(typed))
+        return;
     }
 
-    if (typed === this.state.currentCard.back) {
+    if (currentCard.hasAnswer(typed)) {
       this.setState({ backgroundColor: "#f6ffed", border: "1px solid #b7eb8f" });
       this.resetInputAfterTyping(true);
     } else {
@@ -120,15 +119,18 @@ class FlashCardApp extends React.Component {
 
   render() {
     let card = this.state.currentCard;
+    if (card.front == "No active cards!")
+      card.front = <Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
+
     let defaultText = this.state.firstTimeTyping ? "type the phonetic translation" : "";
 
     let displayButton;
     if (this.state.justRevealed)
-      displayButton = <Button type="default" size="large" onClick={this.resetInputAfterReveal} 
-        style={{backgroundColor: "transparent", margin: "2%"}}>continue</Button>;
+      displayButton = <Button type="default" size="large" onClick={this.resetInputAfterReveal}
+        style={{ backgroundColor: "transparent", margin: "2%" }}>continue</Button>;
     else
-      displayButton = <Button type="default" size="large" onClick={this.showAnswer} 
-        style={{backgroundColor: "transparent", margin: "2%"}}>show</Button>
+      displayButton = <Button type="default" size="large" onClick={this.showAnswer}
+        style={{ backgroundColor: "transparent", margin: "2%" }}>show</Button>
 
     return (
       <div align="center">

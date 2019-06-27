@@ -1,9 +1,9 @@
 import React from 'react';
-import FlashCardApp from './FlashCardApp';
 import { buildDefaultDeck } from './Deck'
-import { Icon, Menu, Modal, Button, Switch} from "antd"
+import { Icon, Menu, Button } from "antd"
+import FlashCardApp from './FlashCardApp';
+import TagsModal from './TagsModal'
 import "./Site.css"
-const { SubMenu } = Menu;
 
 class Site extends React.Component {
     constructor(props) {
@@ -20,21 +20,21 @@ class Site extends React.Component {
         }
 
         this.navBar = (
-            
-                <Menu mode="horizontal" style={{height: "5%"}} 
-                    onClick={this.selectMenuItem}
-                    selectedKeys={[this.state.selected]}>
-                            <Menu.Item key="tags"><Icon type="setting"></Icon>Kana Options</Menu.Item>
-                            <Menu.Item key="add" disabled><Icon type="plus-circle"></Icon>Add Custom Cards</Menu.Item>
-                            <Menu.Item key="delete" disabled><Icon type="minus-circle"></Icon>Delete Cards</Menu.Item>
-                            <Menu.Item key="stats" disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
-                            <Menu.Item key="login" style={{float: "right", marginRight: "2%"}} disabled>
-                                <Icon type="login"></Icon>
-                                Log In
+
+            <Menu mode="horizontal" style={{ height: "5%" }}
+                onClick={this.selectMenuItem}
+                selectedKeys={[this.state.selected]}>
+                <Menu.Item key="tags"><Icon type="setting"></Icon>Kana Options</Menu.Item>
+                <Menu.Item key="add" disabled><Icon type="plus-circle"></Icon>Add Custom Cards</Menu.Item>
+                <Menu.Item key="delete" disabled><Icon type="minus-circle"></Icon>Delete Cards</Menu.Item>
+                <Menu.Item key="stats" disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
+                <Menu.Item key="login" style={{ float: "right", marginRight: "2%" }} disabled>
+                    <Icon type="login"></Icon>
+                    Log In
                             </Menu.Item>
-                </Menu>
-                
-            
+            </Menu>
+
+
         );
     }
 
@@ -47,14 +47,14 @@ class Site extends React.Component {
     }
 
     closeModal() {
-        this.setState({selected: ""});
+        this.setState({ selected: "" });
     }
 
     selectMenuItem(event) {
-        this.setState({selected: event.key})
+        this.setState({ selected: event.key })
     }
 
-    rebuildDeck(activeTags){
+    rebuildDeck(activeTags) {
         this.deck.rebuildActive(activeTags);
     }
 
@@ -62,26 +62,13 @@ class Site extends React.Component {
         return (
             <div>
                 {this.navBar}
-                <Modal title="Tags" visible={this.state.selected === "tags"}
-                    onCancel={this.closeModal} onOk={this.closeModal}>
-                    <table>
-                    {
-                        Object.keys(this.deck.tags).map((tag) => {
-                            console.log(tag);
-                            return (
-                                <tr>
-                                    <td>{tag}</td>
-                                    <td><Switch></Switch></td>
-                                </tr>
-                            );
-                        })
-                    }
-                    </table>
-                </Modal>
+                <TagsModal tags={this.deck.tags}
+                    closeModal={this.closeModal}
+                    deck={this.deck}
+                    visible={this.state.selected === "tags"}>
+                </TagsModal>
                 <div style={{ marginTop: "1%" }}>
-                    <header>
-                        Flash Cards for Japanese
-                    </header>
+                    <header> Flash Cards for Japanese </header>
                 </div>
                 <FlashCardApp deck={this.deck}></FlashCardApp>
             </div>

@@ -18,11 +18,11 @@ class Card {
         this.tags.push(tag);
     }
 
-    matchesAnswer(input) {
+    hasAnswer(input) {
         return input === this.back;
     }
 
-    matchesBeginning(input) {
+    startsWith(input) {
         return input === this.back.slice(0, input.length);
     }
 }
@@ -49,7 +49,7 @@ export class Deck {
 
     append(card) {
         this.cards.push(card);
-        card.tags.forEach((tag) => {this.tags[tag] = true})
+        card.tags.forEach((tag) => { this.tags[tag] = true })
         this.usedInActive.push(false);
     }
 
@@ -60,10 +60,10 @@ export class Deck {
     rebuildActive(activeTags) {
         // Reset active cards, tags, and usedInActive flags
         this.active = [];
-        Object.keys(this.tags).map((tag)=>{this.tags[tag] = false})
+        Object.keys(this.tags).map((tag) => { this.tags[tag] = false })
         this.usedInActive = this.cards.map(() => { return false });
-        
-        activeTags.map((tag)=>{this.tags[tag] = true})
+
+        activeTags.map((tag) => { this.tags[tag] = true })
         // Add all cards with selected tags
         for (let cardID in this.cards) {
             let card = this.cards[cardID];
