@@ -1,0 +1,30 @@
+@import '~antd/dist/antd.css';
+
+.App {
+  text-align: center;
+  width: 50%
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.Card {
+  width: 50%;
+  padding: 2%;
+  border-radius: 25px;
+  margin: 10px;
+}
+
+@media (max-width: 600px) {
+  .Card {
+    width:80%;
+  }
+}

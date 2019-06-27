@@ -12,7 +12,7 @@ class UserInputDisplay extends React.Component {
     render() {
         return (
             <div align="center" style={{margin: "2%", width: "80%"}}>
-                <Input autoFocus ghost
+                <Input autoFocus ghost="true"
                     placeholder={this.props.defaultText}
                     value={this.props.data}
                     style={inputFieldStyle}
