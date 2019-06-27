@@ -1,0 +1,13 @@
+@import '~antd/dist/antd.css';
+
+header {
+    display: flex;
+    justify-content: center;
+    font-size: 1.5em;
+}
+
+.flexLeft {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+}
