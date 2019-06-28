@@ -17,16 +17,20 @@ class Site extends React.Component {
         this.startingActive = [];
 
         // Load existing values if they're there.
-        if (Object.keys(window.localStorage).length === 0) {
-            this.startingActive.push("basic hiragana");
+        let savedSettings = JSON.parse(localStorage.getItem("activeTags"));
+
+        if (savedSettings) {
+            Object.entries(savedSettings).forEach(([tag, active]) => {
+                if (active)
+                    this.startingActive.push(tag);
+            })
         } else {
-            Object.keys(window.localStorage).forEach((tag) => {
-                console.log(tag)
-                let active = window.localStorage.getItem(tag);
-                if (active) this.startingActive.push(tag);
-            });
+            // Otherwise, default to having basic hiragana
+            this.startingActive.push("basic hiragana");
+            savedSettings = { "basic hiragana": true };
+            localStorage.setItem("activeTags", JSON.stringify(savedSettings));
         }
-        
+
         this.deck = buildDefaultDeck(this.startingActive);
 
         this.state = {
@@ -70,26 +74,26 @@ class Site extends React.Component {
         this.setState({ selected: event.key })
     }
 
-    changeCard(){
-        this.setState({currentCard: this.deck.getNextCard()});
+    changeCard() {
+        this.setState({ currentCard: this.deck.getNextCard() });
     }
 
     render() {
         return (
             <div>
                 {this.navBar}
-                <TagsModal 
+                <TagsModal
                     startingActive={this.startingActive}
                     tags={this.deck.tags}
                     closeModal={this.closeModal}
-                    rebuildActive={(activeTags)=>{this.deck.rebuildActive(activeTags)}}
+                    rebuildActive={(activeTags) => { this.deck.rebuildActive(activeTags) }}
                     changeCard={this.changeCard}
                     visible={this.state.selected === "tags"}>
                 </TagsModal>
                 <div style={{ marginTop: "1%" }}>
                     <header> Flash Cards for Japanese </header>
                 </div>
-                <FlashCardApp currentCard={this.state.currentCard} 
+                <FlashCardApp currentCard={this.state.currentCard}
                     changeCard={this.changeCard}></FlashCardApp>
             </div>
         )

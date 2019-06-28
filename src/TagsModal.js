@@ -10,23 +10,14 @@ class TagsModal extends React.Component {
         this.tagsStartingStatuses = {}
         this.tagsStatuses = {};
 
-        // Populate values from local storage, if they exist.
-        
-        Object.keys(this.props.tags).forEach((tag) => {
-            let defaultToggle = window.localStorage.getItem(tag);
-            if (defaultToggle) {
-                this.tagsStatuses[tag] = (defaultToggle === "true");
-                this.tagsStartingStatuses[tag] = (defaultToggle === "true");
-            } else {
-                this.tagsStatuses[tag] = false;
-                this.tagsStartingStatuses[tag] = false;
-            }
-        });
+        let savedSettings = JSON.parse(localStorage.getItem("activeTags"));
 
-        if (Object.keys(window.localStorage).length === 0) {
-            this.tagsStartingStatuses["basic hiragana"] = true;
-            this.tagsStatuses["basic hiragana"] = true;
-        }
+        // Populate values from local storage, if they exist.
+        Object.keys(this.props.tags).forEach((tag) => {
+            let defaultToggle = savedSettings[tag] || false;
+            this.tagsStatuses[tag] = defaultToggle;
+            this.tagsStartingStatuses[tag] = defaultToggle;
+        });
 
         this.columns = [
             {
@@ -69,10 +60,12 @@ class TagsModal extends React.Component {
             });
             this.props.rebuildActive(activeTags);
 
-            // Record the changes in local storage
+            // Record the changes in local storage via overwrite
+            let savedSettings = {};
             Object.entries(this.tagsStatuses).forEach(([tag, active]) => {
-                window.localStorage.setItem(tag, active);
+                savedSettings[tag] = active;
             })
+            localStorage.setItem("activeTags", JSON.stringify(savedSettings));
 
             this.props.changeCard();
             message.success("Deck rebuilt!");
@@ -91,6 +84,7 @@ class TagsModal extends React.Component {
             <Modal title="Active Categories"
                 visible={this.props.visible}
                 onCancel={this.handleClose}
+                cancelButtonProps={{ disabled: true }}
                 onOk={this.handleClose}>
                 <Table columns={this.columns} dataSource={dataSource}></Table>
             </Modal>
