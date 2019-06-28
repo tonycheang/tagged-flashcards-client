@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/japanese-flash-cards/static/css/main.b3415229.chunk.css",
-    "main.js": "/japanese-flash-cards/static/js/main.0180d4f0.chunk.js",
-    "main.js.map": "/japanese-flash-cards/static/js/main.0180d4f0.chunk.js.map",
+    "main.css": "/japanese-flash-cards/static/css/main.737fec2c.chunk.css",
+    "main.js": "/japanese-flash-cards/static/js/main.b6241e36.chunk.js",
+    "main.js.map": "/japanese-flash-cards/static/js/main.b6241e36.chunk.js.map",
     "runtime~main.js": "/japanese-flash-cards/static/js/runtime~main.e143d4ba.js",
     "runtime~main.js.map": "/japanese-flash-cards/static/js/runtime~main.e143d4ba.js.map",
     "static/css/2.0cdb9ae6.chunk.css": "/japanese-flash-cards/static/css/2.0cdb9ae6.chunk.css",
-    "static/js/2.f650c9ba.chunk.js": "/japanese-flash-cards/static/js/2.f650c9ba.chunk.js",
-    "static/js/2.f650c9ba.chunk.js.map": "/japanese-flash-cards/static/js/2.f650c9ba.chunk.js.map",
+    "static/js/2.0e627287.chunk.js": "/japanese-flash-cards/static/js/2.0e627287.chunk.js",
+    "static/js/2.0e627287.chunk.js.map": "/japanese-flash-cards/static/js/2.0e627287.chunk.js.map",
     "index.html": "/japanese-flash-cards/index.html",
-    "precache-manifest.28298ee278550a0c317809076ce64052.js": "/japanese-flash-cards/precache-manifest.28298ee278550a0c317809076ce64052.js",
+    "precache-manifest.7f65b73325442d39c387bcf5de48e354.js": "/japanese-flash-cards/precache-manifest.7f65b73325442d39c387bcf5de48e354.js",
     "service-worker.js": "/japanese-flash-cards/service-worker.js",
     "static/css/2.0cdb9ae6.chunk.css.map": "/japanese-flash-cards/static/css/2.0cdb9ae6.chunk.css.map",
-    "static/css/main.b3415229.chunk.css.map": "/japanese-flash-cards/static/css/main.b3415229.chunk.css.map"
+    "static/css/main.737fec2c.chunk.css.map": "/japanese-flash-cards/static/css/main.737fec2c.chunk.css.map"
   }
 }
