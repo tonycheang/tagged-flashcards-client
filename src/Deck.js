@@ -33,6 +33,7 @@ export class Deck {
         this.usedInActive = this.cards.map(() => { return false });
         // Check correctness of empty array here
         this.active = [];
+        this.uniqueCycleOfCards = [];
         this.tags = {};
         // Deck keeps track of all active (true) and non-active (false) tags
         for (let card of this.cards) {
@@ -60,10 +61,10 @@ export class Deck {
     rebuildActive(activeTags) {
         // Reset active cards, tags, and usedInActive flags
         this.active = [];
-        Object.keys(this.tags).map((tag) => { this.tags[tag] = false })
+        Object.keys(this.tags).forEach((tag) => { this.tags[tag] = false })
         this.usedInActive = this.cards.map(() => { return false });
 
-        activeTags.map((tag) => { this.tags[tag] = true })
+        activeTags.forEach((tag) => { this.tags[tag] = true })
         // Add all cards with selected tags
         for (let cardID in this.cards) {
             let card = this.cards[cardID];
@@ -75,14 +76,32 @@ export class Deck {
                 }
             }
         }
+        this.buildUniqueCycle();
+    }
+
+    buildUniqueCycle() {
+        // Shallow copy OK since tags do not matter.
+        this.uniqueCycleOfCards = this.active.slice();
+        // Fisher-Yate's or Durstenfeld shuffle
+        for (let i = this.active.length - 1; i > 0 ;i--) {
+            let nextPicked = Math.floor(Math.random()*(i+1));
+            // Swap into already-chosen region.
+            [this.uniqueCycleOfCards[nextPicked], this.uniqueCycleOfCards[i]] = 
+                [this.uniqueCycleOfCards[i], this.uniqueCycleOfCards[nextPicked]];
+        }
     }
 
     getNextCard() {
         if (this.active.length === 0) {
             return new Card("No active cards!");
         }
-        // Can add SRS system here with heap later or generate a exhaust a full ordering
-        return this.active[Math.floor(this.active.length * Math.random())];
+        
+        if (this.uniqueCycleOfCards.length <= 0){
+            this.buildUniqueCycle();
+        }
+
+        // Can add SRS system here with heap later
+        return this.uniqueCycleOfCards.pop();
     }
 }
 
