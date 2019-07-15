@@ -1,3 +1,5 @@
+import React from 'react';
+import { Empty } from 'antd';
 class Card {
     // Can expand to approximate matching later if desired
     constructor(front, back, tags) {
@@ -93,7 +95,7 @@ export class Deck {
 
     getNextCard() {
         if (this.active.length === 0) {
-            return new Card("No active cards!");
+            return new Card(<Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />);
         }
         
         if (this.uniqueCycleOfCards.length <= 0){
