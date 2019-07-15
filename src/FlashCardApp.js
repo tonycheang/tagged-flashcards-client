@@ -82,10 +82,11 @@ class FlashCardApp extends React.Component {
     /* Flashes red or green on the page depending on input correctness */
 
     // Don't accept input if card got revealed
-    if (this.state.justRevealed)
+    if (this.state.justRevealed || !this.props.currentCard.back)
       return;
 
     let currentCard = this.props.currentCard;
+    console.log(currentCard);
     let answer = currentCard.back;
     let typed = this.state.typed.toLowerCase();
 
@@ -116,8 +117,6 @@ class FlashCardApp extends React.Component {
 
   render() {
     let card = this.props.currentCard;
-    if (card.front === "No active cards!")
-      card.front = <Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
 
     let defaultText = this.state.firstTimeTyping ? "type the phonetic translation" : "";
 
