@@ -3,6 +3,7 @@ import { buildDefaultDeck } from './Deck'
 import { Icon, Menu, Button } from "antd"
 import FlashCardApp from './FlashCardApp';
 import TagsModal from './TagsModal'
+import AddCardsDialog from './AddCardsModal'
 import "./Site.css"
 
 class Site extends React.Component {
@@ -45,7 +46,7 @@ class Site extends React.Component {
                 onClick={this.selectMenuItem}
                 selectedKeys={[this.state.selected]}>
                 <Menu.Item key="tags"><Icon type="setting"></Icon>Kana Options</Menu.Item>
-                <Menu.Item key="add" disabled><Icon type="plus-circle"></Icon>Add Custom Cards</Menu.Item>
+                <Menu.Item key="add"><Icon type="plus-circle"></Icon>Add Cards</Menu.Item>
                 <Menu.Item key="delete" disabled><Icon type="minus-circle"></Icon>Delete Cards</Menu.Item>
                 <Menu.Item key="stats" disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
                 <Menu.Item key="login" style={{ float: "right", marginRight: "2%" }} disabled>
@@ -79,17 +80,31 @@ class Site extends React.Component {
     }
 
     render() {
+        let modal;
+        switch(this.state.selected) {
+            case "tags":
+                modal = <TagsModal
+                            startingActive={this.startingActive}
+                            tags={this.deck.tags}
+                            closeModal={this.closeModal}
+                            rebuildActive={(activeTags) => { this.deck.rebuildActive(activeTags) }}
+                            changeCard={this.changeCard}
+                            visible={this.state.selected === "tags"}>
+                        </TagsModal>
+                break;
+            case "add":
+                modal = <AddCardsDialog closeModal={this.closeModal}
+                            visible={this.state.selected === "add"}>
+                        </AddCardsDialog>
+                break;
+            default:
+                break;
+        }
+
         return (
             <div>
                 {this.navBar}
-                <TagsModal
-                    startingActive={this.startingActive}
-                    tags={this.deck.tags}
-                    closeModal={this.closeModal}
-                    rebuildActive={(activeTags) => { this.deck.rebuildActive(activeTags) }}
-                    changeCard={this.changeCard}
-                    visible={this.state.selected === "tags"}>
-                </TagsModal>
+                {modal}
                 <div style={{ marginTop: "1%" }}>
                     <header> Flash Cards for Japanese </header>
                 </div>
