@@ -35,10 +35,13 @@ class FlashCardApp extends React.Component {
   }
 
   handleInput(event) {
+    if (!this.props.answering)
+      return;
+
     if (this.state.firstTimeTyping)
       this.setState({ firstTimeTyping: false });
 
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === "Enter") {
       if (this.state.justRevealed)
         this.resetInputAfterReveal();
       else
@@ -51,7 +54,8 @@ class FlashCardApp extends React.Component {
       if (curText.length > 0) {
         this.setState({ typed: curText.slice(0, curText.length - 1) })
       }
-    } else if (isLetter.test(event.key)) {
+    // should test for other allowable keys here (sentences have punctuation)
+    } else if (isLetter.test(event.key) || event.key === " ") {
       this.setState((state) => state.typed += event.key)
     } else {
       // Do not extend timer for input or report correctness
@@ -80,6 +84,8 @@ class FlashCardApp extends React.Component {
 
   reportCorrectness() {
     /* Flashes red or green on the page depending on input correctness */
+    if (!this.props.answering)
+      return;
 
     // Don't accept input if card got revealed
     if (this.state.justRevealed || !this.props.currentCard.back)
@@ -138,7 +144,7 @@ class FlashCardApp extends React.Component {
           <UserInputDisplay data={this.state.typed}
             defaultText={defaultText}
             textColor={this.state.textColor}
-            onChange={this.readForm}>
+            onChange={this.handleInput}>
           </UserInputDisplay>
           <div>{displayButton}</div>
 
