@@ -1,6 +1,6 @@
 import React from 'react';
 import { Empty } from 'antd';
-class Card {
+export class Card {
     // Can expand to approximate matching later if desired
     constructor(front, back, tags) {
         this.front = front;
@@ -31,6 +31,8 @@ class Card {
 
 export class Deck {
     constructor(cards) {
+        this.append = this.append.bind(this);
+
         this.cards = cards || [];
         this.usedInActive = this.cards.map(() => { return false });
         // Check correctness of empty array here
