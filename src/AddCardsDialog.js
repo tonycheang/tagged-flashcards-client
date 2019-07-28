@@ -1,12 +1,15 @@
 import React from 'react';
-import {Modal, Form, Input, message} from 'antd';
+import { Modal, Form, Input, message } from 'antd';
+import EditableTagGroup from "./EditableTagGroup"
+import { Card } from "./Deck"
 
-const ModalForm = Form.create({name: "Modal Form"})(
+const ModalForm = Form.create({ name: "Modal Form" })(
     class extends React.Component {
+
         render() {
             const { visible, onCancel, onAdd, form } = this.props;
             const { getFieldDecorator } = form;
-            
+
             return (
                 <Modal title="Add Card"
                     visible={visible}
@@ -20,6 +23,12 @@ const ModalForm = Form.create({name: "Modal Form"})(
                         <Form.Item>
                             {getFieldDecorator("back")(<Input placeholder="Back"></Input>)}
                         </Form.Item>
+                        <Form.Item>
+                            <EditableTagGroup tags={this.props.tags}
+                                setTags={(tags)=>this.props.setTags(tags)}>
+
+                            </EditableTagGroup>
+                        </Form.Item>
                     </Form>
                 </Modal>
             )
@@ -28,17 +37,19 @@ const ModalForm = Form.create({name: "Modal Form"})(
 )
 
 class AddCardsDialog extends React.Component {
+    state = {
+        tags: []
+    }
 
-    // What is going on here?
     saveFormRef = (formRef) => {
         this.formRef = formRef;
     }
 
     handleAdd = () => {
         const { form } = this.formRef.props;
+        const { tags } = this.state;
         form.validateFields((err, values) => {
             if (err) return;
-            console.log("form recieved: ", values);
 
             if (!values.front && !values.back) {
                 message.warning("Cannot add empty card!");
@@ -54,8 +65,9 @@ class AddCardsDialog extends React.Component {
                 message.warning("Card needs a back!")
                 return;
             }
-            
+
             // Add a card here.
+            this.props.appendCard(new Card(values.front, values.back, tags));
 
             message.success("Card added!");
             form.resetFields();
@@ -64,11 +76,13 @@ class AddCardsDialog extends React.Component {
 
     render() {
         return (
-            <ModalForm 
+            <ModalForm
                 wrappedComponentRef={this.saveFormRef}
                 visible={this.props.visible}
                 onCancel={this.props.closeModal}
-                onAdd={this.handleAdd}>
+                onAdd={this.handleAdd}
+                tags={this.state.tags}
+                setTags={(tags)=>{this.setState({tags})}}>
             </ModalForm>
         )
     }
