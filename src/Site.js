@@ -3,14 +3,12 @@ import { buildDefaultDeck } from './Deck'
 import { Icon, Menu, Button } from "antd"
 import FlashCardApp from './FlashCardApp';
 import TagsModal from './TagsModal'
-import AddCardsDialog from './AddCardsModal'
+import AddCardsDialog from './AddCardsDialog'
 import "./Site.css"
 
 class Site extends React.Component {
     constructor(props) {
         super(props);
-        this.openMenu = this.openMenu.bind(this);
-        this.closeMenu = this.closeMenu.bind(this);
         this.selectMenuItem = this.selectMenuItem.bind(this);
         this.closeModal = this.closeModal.bind(this);
         this.changeCard = this.changeCard.bind(this);
@@ -24,7 +22,7 @@ class Site extends React.Component {
             Object.entries(savedSettings).forEach(([tag, active]) => {
                 if (active)
                     this.startingActive.push(tag);
-            })
+            });
         } else {
             // Otherwise, default to having basic hiragana
             this.startingActive.push("basic hiragana");
@@ -38,7 +36,7 @@ class Site extends React.Component {
             currentCard: this.deck.getNextCard(),
             menuOpen: false,
             selected: ""
-        }
+        };
 
         this.navBar = (
 
@@ -57,14 +55,6 @@ class Site extends React.Component {
 
 
         );
-    }
-
-    openMenu() {
-        this.setState({ menuOpen: true });
-    }
-
-    closeMenu() {
-        this.setState({ menuOpen: false });
     }
 
     closeModal() {
@@ -94,7 +84,9 @@ class Site extends React.Component {
                 break;
             case "add":
                 modal = <AddCardsDialog closeModal={this.closeModal}
-                            visible={this.state.selected === "add"}>
+                            visible={this.state.selected === "add"}
+                            deckTags={this.deck.tags}
+                            appendCard={this.deck.append}>
                         </AddCardsDialog>
                 break;
             default:
@@ -109,7 +101,8 @@ class Site extends React.Component {
                     <header> Flash Cards for Japanese </header>
                 </div>
                 <FlashCardApp currentCard={this.state.currentCard}
-                    changeCard={this.changeCard}></FlashCardApp>
+                    changeCard={this.changeCard}
+                    answering={this.state.selected == ""}></FlashCardApp>
             </div>
         )
     }
