@@ -1,10 +1,12 @@
 import React from 'react';
 import { buildDefaultDeck } from './Deck'
-import { Icon, Menu, Button } from "antd"
+import { Icon, Menu, Layout } from "antd"
 import FlashCardApp from './FlashCardApp';
 import TagsModal from './TagsModal'
 import AddCardsDialog from './AddCardsDialog'
 import "./Site.css"
+
+const { Header, Content, Footer } = Layout;
 
 class Site extends React.Component {
     constructor(props) {
@@ -35,34 +37,17 @@ class Site extends React.Component {
         this.state = {
             currentCard: this.deck.getNextCard(),
             menuOpen: false,
-            selected: ""
+            prevSelected: "review",
+            selected: "review"
         };
-
-        this.navBar = (
-
-            <Menu mode="horizontal" style={{ height: "5%" }}
-                onClick={this.selectMenuItem}
-                selectedKeys={[this.state.selected]}>
-                <Menu.Item key="tags"><Icon type="setting"></Icon>Kana Options</Menu.Item>
-                <Menu.Item key="add"><Icon type="plus-circle"></Icon>Add Cards</Menu.Item>
-                <Menu.Item key="delete" disabled><Icon type="minus-circle"></Icon>Delete Cards</Menu.Item>
-                <Menu.Item key="stats" disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
-                <Menu.Item key="login" style={{ float: "right", marginRight: "2%" }} disabled>
-                    <Icon type="login"></Icon>
-                    Log In
-                            </Menu.Item>
-            </Menu>
-
-
-        );
     }
 
     closeModal() {
-        this.setState({ selected: "" });
+        this.setState({ selected: this.state.prevSelected });
     }
 
     selectMenuItem(event) {
-        this.setState({ selected: event.key })
+        this.setState({ selected: event.key, prevSelected: this.state.selected })
     }
 
     changeCard() {
@@ -70,8 +55,21 @@ class Site extends React.Component {
     }
 
     render() {
+        const navBar = <Menu mode="horizontal" style={{ height: "5%" }}
+                            onClick={this.selectMenuItem}
+                            selectedKeys={[this.state.selected]}>
+                            <Menu.Item key="review"><Icon type="home"></Icon>Review</Menu.Item>
+                            <Menu.Item key="tags"><Icon type="setting"></Icon>Active Tags</Menu.Item>
+                            <Menu.Item key="manage"><Icon type="edit"></Icon>Manage Deck</Menu.Item>
+                            <Menu.Item key="stats" disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
+                            <Menu.Item key="login" style={{ float: "right", marginRight: "2%" }} disabled>
+                                <Icon type="login"></Icon>
+                                Log In
+                            </Menu.Item>
+                        </Menu>
+
         let modal;
-        switch(this.state.selected) {
+        switch (this.state.selected) {
             case "tags":
                 modal = <TagsModal
                             startingActive={this.startingActive}
@@ -82,12 +80,23 @@ class Site extends React.Component {
                             visible={this.state.selected === "tags"}>
                         </TagsModal>
                 break;
-            case "add":
-                modal = <AddCardsDialog closeModal={this.closeModal}
-                            visible={this.state.selected === "add"}
-                            deckTags={this.deck.tags}
-                            appendCard={this.deck.append}>
-                        </AddCardsDialog>
+            case "manage":
+                this.activeMain = <AddCardsDialog visible={this.state.selected === "manage"}
+                                    allCards={this.deck.cards}
+                                    deckTags={this.deck.tags}
+                                    appendCard={this.deck.append}>
+                                </AddCardsDialog>
+                break;
+            case "review":
+                this.activeMain = <div>
+                                    <div style={{ marginTop: "1%" }}>
+                                        <header> Flash Cards for Japanese </header>
+                                    </div>
+                                    <FlashCardApp currentCard={this.state.currentCard}
+                                        changeCard={this.changeCard}
+                                        answering={this.state.selected === "review"}>
+                                    </FlashCardApp>
+                                </div>
                 break;
             default:
                 break;
@@ -95,14 +104,9 @@ class Site extends React.Component {
 
         return (
             <div>
-                {this.navBar}
+                {navBar}
                 {modal}
-                <div style={{ marginTop: "1%" }}>
-                    <header> Flash Cards for Japanese </header>
-                </div>
-                <FlashCardApp currentCard={this.state.currentCard}
-                    changeCard={this.changeCard}
-                    answering={this.state.selected == ""}></FlashCardApp>
+                {this.activeMain}
             </div>
         )
     }
