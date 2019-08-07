@@ -103,11 +103,13 @@ class Site extends React.Component {
         }
 
         return (
-            <div>
+            <Layout>
                 {navBar}
                 {modal}
+                <Content>
                 {this.activeMain}
-            </div>
+                </Content>
+            </Layout>
         )
     }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Empty } from 'antd';
-export class Card {
+export class FlashCard {
     // Can expand to approximate matching later if desired
     constructor(front, back, tags) {
         this.front = front;
@@ -97,7 +97,7 @@ export class Deck {
 
     getNextCard() {
         if (this.active.length === 0) {
-            return new Card(<Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />);
+            return new FlashCard(<Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />);
         }
         
         if (this.uniqueCycleOfCards.length <= 0){
@@ -111,7 +111,7 @@ export class Deck {
 
 export function buildDefaultDeck(activeTags) {
     function zipAndAppendToDeck(characters, phonetics, tag, deck) {
-        let zipped = characters.map((char, i) => new Card(char, phonetics[i], [tag]));
+        let zipped = characters.map((char, i) => new FlashCard(char, phonetics[i], [tag]));
         zipped.forEach((card) => deck.append(card));
     }
 

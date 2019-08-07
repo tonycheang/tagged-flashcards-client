@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Form, Input, message, Popconfirm, Table, Tag } from 'antd';
 import EditableTagGroup from "./EditableTagGroup"
-import { Card } from "./Deck"
+import { FlashCard } from "./Deck"
 
 const EditableContext = React.createContext();
 
@@ -241,7 +241,7 @@ class AddCardsDialog extends React.Component {
             }
 
             // Add a card here.
-            this.props.appendCard(new Card(values.front, values.back, tags));
+            this.props.appendCard(new FlashCard(values.front, values.back, tags));
 
             message.success("Card added!");
             form.resetFields();

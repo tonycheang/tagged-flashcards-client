@@ -1,7 +1,7 @@
 import React from 'react';
 import CardDisplay from './CardDisplay';
 import UserInputDisplay from './UserInputDisplay';
-import { Button, Empty } from 'antd'
+import { Button } from 'antd'
 import './FlashCardApp.css';
 
 class FlashCardApp extends React.Component {

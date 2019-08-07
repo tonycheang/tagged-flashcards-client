@@ -46,7 +46,7 @@ class TagsModal extends React.Component {
         // Determine if anything changed
         let changed = false;
         Object.entries(this.tagsStartingStatuses).forEach(([tag, startingStatus]) => {
-            if (this.tagsStatuses[tag] != startingStatus) {
+            if (this.tagsStatuses[tag] !== startingStatus) {
                 changed = true;
                 // Update the starting status for next deck change
                 this.tagsStartingStatuses[tag] = this.tagsStatuses[tag];
