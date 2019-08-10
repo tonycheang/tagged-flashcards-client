@@ -1,7 +1,6 @@
 import React from 'react';
-import CardDisplay from './CardDisplay';
 import UserInputDisplay from './UserInputDisplay';
-import { Button } from 'antd'
+import { Button, Card } from 'antd'
 import './FlashCardApp.css';
 
 class FlashCardApp extends React.Component {
@@ -136,19 +135,15 @@ class FlashCardApp extends React.Component {
 
     return (
       <div align="center">
-        <div className="Card" style={{
-          backgroundColor: this.state.backgroundColor,
-          border: this.state.border,
-        }}>
-          <CardDisplay data={card.front}></CardDisplay>
+        <Card className="Card" style={{backgroundColor: this.state.backgroundColor}}>
+          <div style={{fontSize: 70, margin: "2%"}}>{card.front}</div>
           <UserInputDisplay data={this.state.typed}
             defaultText={defaultText}
             textColor={this.state.textColor}
             onChange={this.handleInput}>
           </UserInputDisplay>
           <div>{displayButton}</div>
-
-        </div>
+        </Card>  
       </div>
     )
   };
