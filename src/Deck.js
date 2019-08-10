@@ -1,11 +1,12 @@
 import React from 'react';
-import { Empty } from 'antd';
+import { Empty, Card } from 'antd';
 export class FlashCard {
     // Can expand to approximate matching later if desired
-    constructor(front, back, tags) {
+    constructor(front, back, tags, key) {
         this.front = front;
         this.back = back;
         this.tags = tags || [];
+        this.key = key || -1;
     }
 
     isTagged(check) {
@@ -32,6 +33,8 @@ export class FlashCard {
 export class Deck {
     constructor(cards) {
         this.append = this.append.bind(this);
+        this.deleteCard = this.deleteCard.bind(this);
+        this.editCard = this.editCard.bind(this);
 
         this.cards = cards || [];
         this.usedInActive = this.cards.map(() => { return false });
@@ -53,13 +56,20 @@ export class Deck {
     }
 
     append(card) {
+        // Doesn't work if there are holes in the array (second delete)
+        card.key = this.cards.length;
         this.cards.push(card);
         card.tags.forEach((tag) => { this.tags[tag] = true })
         this.usedInActive.push(false);
     }
 
-    remove(card) {
-        // to do
+    deleteCard(key) {
+        // Doesn't work if there are holes in the array (second delete)
+        this.cards.splice(key, 1);
+    }
+
+    editCard(key, values) {
+        this.cards[key] = new FlashCard(values.front, values.back, values.tags, key);
     }
 
     rebuildActive(activeTags) {
