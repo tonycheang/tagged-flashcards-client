@@ -42,10 +42,10 @@ export default class EditableTagGroup extends React.Component {
   render() {
     const { inputVisible, inputValue } = this.state;
     const { tags } = this.props;
+    let tagDisplay;
 
-    return (
-      <div>
-        {tags.map((tag, index) => {
+    if (tags) {
+        tagDisplay = tags.map((tag, index) => {
           const isLongTag = tag.length > 20;
           const tagElem = (
             <Tag key={tag} closable onClose={() => this.handleClose(tag)}>
@@ -59,7 +59,12 @@ export default class EditableTagGroup extends React.Component {
           ) : (
             tagElem
           );
-        })}
+        })
+    }
+
+    return (
+      <div>
+        {tagDisplay}
         {/* Use AutoComplete */}
         {inputVisible && (
           <Input
