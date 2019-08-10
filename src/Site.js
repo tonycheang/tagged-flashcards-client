@@ -84,7 +84,9 @@ class Site extends React.Component {
                 this.activeMain = <AddCardsDialog visible={this.state.selected === "manage"}
                                     allCards={this.deck.cards}
                                     deckTags={this.deck.tags}
-                                    appendCard={this.deck.append}>
+                                    appendCard={this.deck.append}
+                                    editCard={this.deck.editCard}
+                                    deleteCard={this.deck.deleteCard}>
                                 </AddCardsDialog>
                 break;
             case "review":
