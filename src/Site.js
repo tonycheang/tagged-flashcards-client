@@ -3,10 +3,10 @@ import { buildDefaultDeck } from './Deck'
 import { Icon, Menu, Layout } from "antd"
 import FlashCardApp from './FlashCardApp';
 import TagsModal from './TagsModal'
-import AddCardsDialog from './AddCardsDialog'
+import ManageDeckPage from './ManageDeckPage'
 import "./Site.css"
 
-const { Header, Content, Footer } = Layout;
+const { Content } = Layout;
 
 class Site extends React.Component {
     constructor(props) {
@@ -73,7 +73,7 @@ class Site extends React.Component {
             case "tags":
                 modal = <TagsModal
                             startingActive={this.startingActive}
-                            tags={this.deck.tags}
+                            listOfTags={this.deck.listOfTags}
                             closeModal={this.closeModal}
                             rebuildActive={(activeTags) => { this.deck.rebuildActive(activeTags) }}
                             changeCard={this.changeCard}
@@ -81,13 +81,12 @@ class Site extends React.Component {
                         </TagsModal>
                 break;
             case "manage":
-                this.activeMain = <AddCardsDialog visible={this.state.selected === "manage"}
-                                    allCards={this.deck.cards}
-                                    deckTags={this.deck.tags}
+                this.activeMain = <ManageDeckPage visible={this.state.selected === "manage"}
+                                    allCards={this.deck.listOfCards}
                                     appendCard={this.deck.append}
                                     editCard={this.deck.editCard}
                                     deleteCard={this.deck.deleteCard}>
-                                </AddCardsDialog>
+                                </ManageDeckPage>
                 break;
             case "review":
                 this.activeMain = <div>
