@@ -31,41 +31,37 @@ export class FlashCard {
 }
 
 export class Deck {
-    constructor(cards) {
+    constructor() {
         this.append = this.append.bind(this);
         this.deleteCard = this.deleteCard.bind(this);
         this.editCard = this.editCard.bind(this);
 
-        this.cards = cards || [];
-        this.usedInActive = this.cards.map(() => { return false });
-        // Check correctness of empty array here
+        this.cards = {};
+        this.nextKey = 0;
         this.active = [];
         this.uniqueCycleOfCards = [];
         this.tags = {};
-        // Deck keeps track of all active (true) and non-active (false) tags
-        for (let card of this.cards) {
-            for (let tag of card.tags) {
-                this.tags[tag] = false;
-            }
-        }
     }
 
-    combineDeck(other) {
-        let allCards = this.cards.concat(other.cards);
-        return new Deck(allCards);
+    get listOfTags() {
+        return Object.keys(this.tags);
+    }
+
+    get listOfCards() {
+        return Object.values(this.cards);
     }
 
     append(card) {
-        // Doesn't work if there are holes in the array (second delete)
-        card.key = this.cards.length;
-        this.cards.push(card);
-        card.tags.forEach((tag) => { this.tags[tag] = true })
-        this.usedInActive.push(false);
+        // Next key always increases, despite deletions. Ensures newly added cards to end by default.
+        card.key = this.nextKey;
+        this.nextKey++;
+        this.cards[card.key] = card;
+        // Just keep track of all tags. Boolean unused.
+        card.tags.forEach((tag) => { this.tags[tag] = true });
     }
 
     deleteCard(key) {
-        // Doesn't work if there are holes in the array (second delete)
-        this.cards.splice(key, 1);
+        delete this.cards[key];
     }
 
     editCard(key, values) {
@@ -75,18 +71,17 @@ export class Deck {
     rebuildActive(activeTags) {
         // Reset active cards, tags, and usedInActive flags
         this.active = [];
-        Object.keys(this.tags).forEach((tag) => { this.tags[tag] = false })
-        this.usedInActive = this.cards.map(() => { return false });
+        const usedInActive = {};
 
-        activeTags.forEach((tag) => { this.tags[tag] = true })
         // Add all cards with selected tags
-        for (let cardID in this.cards) {
-            let card = this.cards[cardID];
+        console.log(Object.entries(this.cards));
+        for (let [key, card] of Object.entries(this.cards)) {
+            console.log(key, card);
             for (let tag of activeTags) {
-                // Avoid appedning duplicate cards
-                if (card.isTagged(tag) && !this.usedInActive[cardID]) {
-                    this.active.push(this.cards[cardID]);
-                    this.usedInActive[cardID] = true;
+                // Avoid appending duplicate cards
+                if (card.isTagged(tag) && !usedInActive[key]) {
+                    this.active.push(card);
+                    usedInActive[key] = true;
                 }
             }
         }
