@@ -257,7 +257,7 @@ class EditableTable extends React.Component {
 
 const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableTable);
 
-class AddCardsDialog extends React.Component {
+class ManageDeckPage extends React.Component {
     render() {
         return (
             <Card style={{margin: "2% 5% 2% 5%"}}>
@@ -270,4 +270,4 @@ class AddCardsDialog extends React.Component {
     }
 }
 
-export default AddCardsDialog;
+export default ManageDeckPage;
