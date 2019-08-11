@@ -13,7 +13,7 @@ class TagsModal extends React.Component {
         let savedSettings = JSON.parse(localStorage.getItem("activeTags"));
 
         // Populate values from local storage, if they exist.
-        Object.keys(this.props.tags).forEach((tag) => {
+        this.props.listOfTags.forEach((tag) => {
             let defaultToggle = savedSettings[tag] || false;
             this.tagsStatuses[tag] = defaultToggle;
             this.tagsStartingStatuses[tag] = defaultToggle;
@@ -76,7 +76,7 @@ class TagsModal extends React.Component {
 
     render() {
         // Make for ALL tags.
-        let dataSource = Object.keys(this.props.tags).map((tag, i) => {
+        let dataSource = this.props.listOfTags.map((tag, i) => {
             return { key: i, tag: tag }
         });
 
