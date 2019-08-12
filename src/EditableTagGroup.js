@@ -3,14 +3,17 @@ import { Tag, Input, Tooltip, Icon } from 'antd';
 
 export default class EditableTagGroup extends React.Component {
   
-  // Component pulls tags from props to allow parent component to read tags
+  // Component in addition to changing state,
+  // also calls callback to set tags in parent components/card
   state = {
+    tags: this.props.tags,
     inputVisible: false,
     inputValue: '',
   };
 
   handleClose = removedTag => {
     const tags = this.props.tags.filter(tag => tag !== removedTag);
+    this.setState({ tags });
     this.props.setTags(tags);
   };
 
@@ -24,7 +27,7 @@ export default class EditableTagGroup extends React.Component {
 
   handleInputConfirm = () => {
     const { inputValue } = this.state;
-    let { tags } = this.props;
+    let { tags } = this.state;
     if (inputValue && tags.indexOf(inputValue) === -1) {
       tags = [...tags, inputValue];
     }
@@ -32,6 +35,7 @@ export default class EditableTagGroup extends React.Component {
     this.props.setTags(tags);
 
     this.setState({
+      tags,
       inputVisible: false,
       inputValue: '',
     });
@@ -41,7 +45,7 @@ export default class EditableTagGroup extends React.Component {
 
   render() {
     const { inputVisible, inputValue } = this.state;
-    const { tags } = this.props;
+    const { tags } = this.state;
     let tagDisplay;
 
     if (tags) {
