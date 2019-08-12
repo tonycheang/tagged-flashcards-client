@@ -1,12 +1,12 @@
 import React from 'react';
-import { Empty, Card } from 'antd';
+import { Empty } from 'antd';
 export class FlashCard {
     // Can expand to approximate matching later if desired
     constructor(front, back, tags, key) {
         this.front = front;
         this.back = back;
         this.tags = tags || [];
-        this.key = key || -1;
+        this.key = key;
     }
 
     isTagged(check) {
@@ -15,10 +15,6 @@ export class FlashCard {
                 return true;
         }
         return false;
-    }
-
-    appendTag(tag) {
-        this.tags.push(tag);
     }
 
     hasAnswer(input) {
@@ -32,9 +28,11 @@ export class FlashCard {
 
 export class Deck {
     constructor() {
-        this.append = this.append.bind(this);
+        this.appendCard = this.appendCard.bind(this);
         this.deleteCard = this.deleteCard.bind(this);
         this.editCard = this.editCard.bind(this);
+        this.getListOfCards = this.getListOfCards.bind(this);
+        this.getCardFromKey = this.getCardFromKey.bind(this);
 
         this.cards = {};
         this.nextKey = 0;
@@ -47,11 +45,17 @@ export class Deck {
         return Object.keys(this.tags);
     }
 
-    get listOfCards() {
-        return Object.values(this.cards);
+    getListOfCards() {
+        // Getter would evaluate when passed as a prop, so we use a regular 
+        // Reverse to show new cards on top
+        return Object.values(this.cards).reverse();
     }
 
-    append(card) {
+    getCardFromKey(key) {
+        return this.cards[key];
+    }
+
+    appendCard(card) {
         // Next key always increases, despite deletions. Ensures newly added cards to end by default.
         card.key = this.nextKey;
         this.nextKey++;
@@ -61,11 +65,15 @@ export class Deck {
     }
 
     deleteCard(key) {
+        this.cards[key].tags.forEach((tag) => {
+            // Clean up empty tags
+        });
         delete this.cards[key];
     }
 
     editCard(key, values) {
         this.cards[key] = new FlashCard(values.front, values.back, values.tags, key);
+        values.tags.forEach((tag) => { this.tags[tag] = true });
     }
 
     rebuildActive(activeTags) {
@@ -74,9 +82,7 @@ export class Deck {
         const usedInActive = {};
 
         // Add all cards with selected tags
-        console.log(Object.entries(this.cards));
         for (let [key, card] of Object.entries(this.cards)) {
-            console.log(key, card);
             for (let tag of activeTags) {
                 // Avoid appending duplicate cards
                 if (card.isTagged(tag) && !usedInActive[key]) {
@@ -117,7 +123,8 @@ export class Deck {
 export function buildDefaultDeck(activeTags) {
     function zipAndAppendToDeck(characters, phonetics, tag, deck) {
         let zipped = characters.map((char, i) => new FlashCard(char, phonetics[i], [tag]));
-        zipped.forEach((card) => deck.append(card));
+        // Reverse for regular order display in table.
+        zipped.reverse().forEach((card) => deck.appendCard(card));
     }
 
     let defaultDeck = new Deck();
@@ -257,13 +264,13 @@ export function buildDefaultDeck(activeTags) {
         "ティ", "ディ", "デュ", "トゥ"
     ];
 
-    zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, "basic hiragana", defaultDeck);
-    zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, "voiced hiragana", defaultDeck);
-    zipAndAppendToDeck(hiraganaYoOn, hiraganaYoOnPhoenetic, "contracted hiragana", defaultDeck);
-    zipAndAppendToDeck(katakanaSeiOn, katakanaSeiOnPhonetic, "basic katakana", defaultDeck);
-    zipAndAppendToDeck(katakanaDakuOn, katakanaDakuOnPhonetic, "voiced katakana", defaultDeck);
-    zipAndAppendToDeck(katakanaYoOn, katakanaYoOnPhonetic, "contracted katakana", defaultDeck);
     zipAndAppendToDeck(katakanaForeign, katakanaForeignPhonetic, "foreign katakana", defaultDeck);
+    zipAndAppendToDeck(katakanaYoOn, katakanaYoOnPhonetic, "contracted katakana", defaultDeck);
+    zipAndAppendToDeck(katakanaDakuOn, katakanaDakuOnPhonetic, "voiced katakana", defaultDeck);
+    zipAndAppendToDeck(katakanaSeiOn, katakanaSeiOnPhonetic, "basic katakana", defaultDeck);
+    zipAndAppendToDeck(hiraganaYoOn, hiraganaYoOnPhoenetic, "contracted hiragana", defaultDeck);
+    zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, "voiced hiragana", defaultDeck);
+    zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, "basic hiragana", defaultDeck);
 
     defaultDeck.rebuildActive(activeTags);
     return defaultDeck;
