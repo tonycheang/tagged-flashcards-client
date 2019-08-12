@@ -42,6 +42,7 @@ class EditableTable extends React.Component {
     constructor(props) {
         super(props);
         this.renderTableHeader = this.renderTableHeader.bind(this);
+        this.editRowTags = this.editRowTags.bind(this);
         this.isEditing = this.isEditing.bind(this);
         this.edit = this.edit.bind(this);
         this.cancel = this.cancel.bind(this);
@@ -49,7 +50,8 @@ class EditableTable extends React.Component {
 
         this.state = {
             editingKey: '',
-            refresh: false
+            refresh: false,
+            rowTags: []
         };
 
         this.columns = [
@@ -73,7 +75,8 @@ class EditableTable extends React.Component {
                     const editable = this.isEditing(record);
 
                     if (editable) {
-                        return <EditableTagGroup tags={record.tags} setTags={record.setTags}/>
+                        // will IMMEDIATELY set tags. need to wait till save or cancel!
+                        return <EditableTagGroup tags={this.state.rowTags} setTags={this.editRowTags}/>
                     } else {
                         if (record.tags)
                             return record.tags.map((tag, i) => <Tag key={i}>{tag}</Tag>);
@@ -133,16 +136,14 @@ class EditableTable extends React.Component {
     }
 
     makeNewRow = () => {
-        const { dataSource } = this.props;
         const newCard = new FlashCard("", "");
         this.props.appendCard(newCard, true);
 
         this.setState({
+            rowTags: [],
             creatingNewCard: true,
             editingKey: newCard.key
         });
-
-        this.props.setData([newCard, ...dataSource]);
     }
 
     renderTableHeader(){
@@ -156,12 +157,18 @@ class EditableTable extends React.Component {
         );
     }
 
+    editRowTags(rowTags) {
+        this.setState({ rowTags });
+        console.log(rowTags);
+    }
+
     isEditing(record) {
         return record.key === this.state.editingKey;
     }
 
     edit(key) {
-        this.setState({ editingKey: key });
+        const rowTags = this.props.getCardFromKey(key).tags || [];
+        this.setState({ editingKey: key, rowTags });
     }
 
     cancel() {
@@ -191,7 +198,8 @@ class EditableTable extends React.Component {
                 message.warning("Card needs a back!");
                 return;
             }
-
+            
+            values.tags = this.state.rowTags;
             this.props.editCard(key, values, this.state.creatingNewCard);
 
             if (this.state.creatingNewCard)
@@ -199,7 +207,7 @@ class EditableTable extends React.Component {
             else
                 message.success("Edited card!");
 
-            this.setState({ editingKey: '', creatingNewCard: false });
+            this.setState({ editingKey: '', creatingNewCard: false, rowTags: [] });
         });
     }
 
@@ -265,7 +273,7 @@ class ManageDeckPage extends React.Component {
         return (
             <Card style={{margin: "2% 5% 2% 5%"}}>
                 <EditableFormTable dataSource={this.state.listOfCards} 
-                    setData={(listOfCards) => { this.setState({ listOfCards }) }}
+                    getCardFromKey={this.props.getCardFromKey}
                     appendCard={this.appendCard}
                     editCard={this.editCard}
                     deleteCard={this.deleteCard}/>
