@@ -44,13 +44,12 @@ class EditableTable extends React.Component {
         this.renderTableHeader = this.renderTableHeader.bind(this);
         this.isEditing = this.isEditing.bind(this);
         this.edit = this.edit.bind(this);
-        this.delete = this.delete.bind(this);
         this.cancel = this.cancel.bind(this);
         this.save = this.save.bind(this);
 
         this.state = {
             editingKey: '',
-            data: this.props.dataSource
+            refresh: false
         };
 
         this.columns = [
@@ -72,9 +71,9 @@ class EditableTable extends React.Component {
                 width: "40%",
                 render: (text, record, dataIndex) => {
                     const editable = this.isEditing(record);
+
                     if (editable) {
-                        // setTags needed to make changes
-                        return <EditableTagGroup tags={record.tags}/>
+                        return <EditableTagGroup tags={record.tags} setTags={record.setTags}/>
                     } else {
                         if (record.tags)
                             return record.tags.map((tag, i) => <Tag key={i}>{tag}</Tag>);
@@ -97,31 +96,31 @@ class EditableTable extends React.Component {
                                 <EditableContext.Consumer>
                                     {
                                         (form) => {
-                                            return <a href="javascript:;"
+                                            return <Button size="small" type="link"
                                                     onClick={() => { this.save(form, record.key) }}>
                                                     Save
-                                                </a>
+                                                </Button>
                                         }
                                     }
                                 </EditableContext.Consumer>
                                 <Divider type="vertical" />
                                 <Popconfirm title="OK to cancel?"
                                     onConfirm={() => { this.cancel(record.key) }}>
-                                    <a>Cancel</a>
+                                    <Button size="small" type="link">Cancel</Button>
                                 </Popconfirm>
                             </span>
                         )
                     } else {
                         operationLink = (
                             <span>
-                                <a disabled={editingKey !== ''}
+                                <Button disabled={editingKey !== ''} size="small" type="link"
                                     onClick={() => { this.edit(record.key) }}>
                                     Edit
-                                </a>
+                                </Button>
                                 <Divider type="vertical" />
-                                <Popconfirm title="Are you sure?"
-                                    onConfirm={() => { this.delete(record.key) }}>
-                                    <a>Delete</a>
+                                <Popconfirm title="Delete this card?" okType="primary" okText="Delete"
+                                    onConfirm={() => { this.props.deleteCard(record.key) }}>
+                                    <Button size="small" type="link">Delete</Button>
                                 </Popconfirm>
                             </span>
                         )
@@ -134,22 +133,22 @@ class EditableTable extends React.Component {
     }
 
     makeNewRow = () => {
-        const { data } = this.state;
-        // Pulls from length of deck to create key, 
-        // which is what deck itself will do in appendCard
-        // THIS WILL BE PROBLEMATIC WITH HOLES. Stack of available keys?
-        const newEntry = {tags: [], key: data.length};
+        const { dataSource } = this.props;
+        const newCard = new FlashCard("", "");
+        this.props.appendCard(newCard, true);
+
         this.setState({
             creatingNewCard: true,
-            data: [newEntry, ...data],
-            editingKey: newEntry.key
+            editingKey: newCard.key
         });
+
+        this.props.setData([newCard, ...dataSource]);
     }
 
     renderTableHeader(){
         return (
             <span style={{ display: "inline-flex", width: "100%", justifyContent: "flex-end"}}>
-                <Button onClick={this.makeNewRow} disabled={this.state.editingKey != ''}>
+                <Button onClick={this.makeNewRow} disabled={this.state.editingKey !== ''}>
                     <Icon type="plus"/>
                     New Card
                 </Button>
@@ -165,19 +164,11 @@ class EditableTable extends React.Component {
         this.setState({ editingKey: key });
     }
 
-    delete(key) {
-        console.log(key);
-        this.props.deleteCard(key);
-        message.success("Card deleted!");
-        // Refresh the component. Inconsistent? should remove at key?
-        this.setState({ editingKey: '' });
-    }
-
     cancel() {
         if (this.state.creatingNewCard) {
-            const { data } = this.state;
-            const restData = data.slice(1, data.length);
-            this.setState({ data: restData, creatingNewCard: false });
+            const { editingKey } = this.state;
+            this.setState({ creatingNewCard: false });
+            this.props.deleteCard(editingKey, true);
         }
         this.setState({ editingKey: '' });
     }
@@ -186,40 +177,28 @@ class EditableTable extends React.Component {
         form.validateFields((err, values) => {
             if (err) return;
 
-            console.log(values);
-
             if (!values.front && !values.back) {
                 message.warning("Cannot add empty card!");
                 return;
             }
 
             if (!values.front) {
-                message.warning("Card needs a front!")
+                message.warning("Card needs a front!");
                 return;
             }
 
             if (!values.back) {
-                message.warning("Card needs a back!")
+                message.warning("Card needs a back!");
                 return;
             }
 
-            if (this.state.creatingNewCard) {
-                this.props.appendCard(new FlashCard(values.front, values.back, values.tags));
-                // Show the change at the top until user navigates away.
-                const { data } = this.state;
-                let newEntry = data[0];
-                newEntry = { ...values, key: newEntry.key };
+            this.props.editCard(key, values, this.state.creatingNewCard);
 
-                console.log(newEntry);
-                const restData = data.slice(1, data.length);
-                this.setState( {data: [newEntry, ...restData]} );
+            if (this.state.creatingNewCard)
+                message.success("Created card!");
+            else
+                message.success("Edited card!");
 
-                message.success("Card added!");
-            } else {
-                this.props.editCard(key, values);
-                message.success("Card changed!");
-            }
-            
             this.setState({ editingKey: '', creatingNewCard: false });
         });
     }
@@ -245,7 +224,7 @@ class EditableTable extends React.Component {
 
         return <EditableContext.Provider value={this.props.form}>
             <Table components={components}
-                dataSource={this.state.data}
+                dataSource={this.props.dataSource}
                 columns={columns}
                 pagination={{ onChange: this.cancel }} 
                 title={this.renderTableHeader}
@@ -258,13 +237,38 @@ class EditableTable extends React.Component {
 const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableTable);
 
 class ManageDeckPage extends React.Component {
+    // Data lives here to refresh table component upon change
+    state = {
+        listOfCards: this.props.getListOfCards()
+    };
+
+    appendCard = (newCard) => {
+        this.props.appendCard(newCard);
+        this.setState({ listOfCards: this.props.getListOfCards() });
+    }
+
+    deleteCard = (key) => {
+        this.props.deleteCard(key);
+        // Can't use getter through props (evaluates in parent) so must explicitly call this function.
+        this.setState({ listOfCards: this.props.getListOfCards() });
+        message.success("Deleted card!")
+    };
+
+    editCard = (key, values) => {
+        this.props.editCard(key, values);
+        this.setState({ listOfCards: this.props.getListOfCards() });
+    }
+
     render() {
+        // Don't necessarily always want to set data and refresh upon cancel. When?
+        // Or what happens when adding to top, then deleting a card below that?
         return (
             <Card style={{margin: "2% 5% 2% 5%"}}>
-                <EditableFormTable dataSource={this.props.allCards} 
-                    appendCard={this.props.appendCard}
-                    editCard={this.props.editCard}
-                    deleteCard={this.props.deleteCard}/>
+                <EditableFormTable dataSource={this.state.listOfCards} 
+                    setData={(listOfCards) => { this.setState({ listOfCards }) }}
+                    appendCard={this.appendCard}
+                    editCard={this.editCard}
+                    deleteCard={this.deleteCard}/>
             </Card>
         )
     }
