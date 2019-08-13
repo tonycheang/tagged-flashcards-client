@@ -58,18 +58,22 @@ class EditableTable extends React.Component {
                 title: "Front",
                 dataIndex: "front",
                 width: "15%",
-                editable: true
+                editable: true,
+                sorter: (a, b) => a.front.localeCompare(b.front),
             },
             {
                 title: "Back",
                 dataIndex: "back",
                 width: "15%",
-                editable: true
+                editable: true,
+                sorter: (a, b) => a.back.localeCompare(b.back)
             },
             {
                 title: "Tags",
                 dataIndex: "tags",
                 width: "40%",
+                filters: this.props.listOfTags.map((tag) => { return {text: tag, value: tag} }),
+                onFilter: (value, record) => { return record.isTagged(value) },
                 render: (text, record, dataIndex) => {
                     const editable = this.isEditing(record);
 
@@ -226,6 +230,8 @@ class EditableTable extends React.Component {
             }
         });
 
+        console.log(columns);
+
         return <EditableContext.Provider value={this.props.form}>
             <Table components={components}
                 dataSource={this.props.dataSource}
@@ -275,7 +281,8 @@ class ManageDeckPage extends React.Component {
                     getCardFromKey={this.props.getCardFromKey}
                     appendCard={this.appendCard}
                     editCard={this.editCard}
-                    deleteCard={this.deleteCard}/>
+                    deleteCard={this.deleteCard}
+                    listOfTags={this.props.listOfTags}/>
             </Card>
         )
     }
