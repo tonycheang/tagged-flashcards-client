@@ -42,7 +42,6 @@ class EditableTable extends React.Component {
     constructor(props) {
         super(props);
         this.renderTableHeader = this.renderTableHeader.bind(this);
-        this.editRowTags = this.editRowTags.bind(this);
         this.isEditing = this.isEditing.bind(this);
         this.edit = this.edit.bind(this);
         this.cancel = this.cancel.bind(this);
@@ -76,7 +75,8 @@ class EditableTable extends React.Component {
 
                     if (editable) {
                         // will IMMEDIATELY set tags. need to wait till save or cancel!
-                        return <EditableTagGroup tags={this.state.rowTags} setTags={this.editRowTags}/>
+                        return <EditableTagGroup tags={this.state.rowTags} 
+                                    setTags={ (rowTags) => { this.setState({ rowTags }) } }/>
                     } else {
                         if (record.tags)
                             return record.tags.map((tag, i) => <Tag key={i}>{tag}</Tag>);
@@ -122,7 +122,8 @@ class EditableTable extends React.Component {
                                 </Button>
                                 <Divider type="vertical" />
                                 <Popconfirm title="Delete this card?" okType="primary" okText="Delete"
-                                    onConfirm={() => { this.props.deleteCard(record.key) }}>
+                                    onConfirm={() => { this.props.deleteCard(record.key); 
+                                                        message.success("Deleted card!"); }}>
                                     <Button size="small" type="link">Delete</Button>
                                 </Popconfirm>
                             </span>
@@ -155,11 +156,6 @@ class EditableTable extends React.Component {
                 </Button>
             </span>
         );
-    }
-
-    editRowTags(rowTags) {
-        this.setState({ rowTags });
-        console.log(rowTags);
     }
 
     isEditing(record) {
@@ -198,7 +194,7 @@ class EditableTable extends React.Component {
                 message.warning("Card needs a back!");
                 return;
             }
-            
+
             values.tags = this.state.rowTags;
             this.props.editCard(key, values, this.state.creatingNewCard);
 
@@ -252,19 +248,22 @@ class ManageDeckPage extends React.Component {
 
     appendCard = (newCard) => {
         this.props.appendCard(newCard);
+        // Can't use getter through props (evaluates in parent) so must explicitly call this function.
         this.setState({ listOfCards: this.props.getListOfCards() });
+        // For Site to check if it needs to rebuild the deck
+        this.props.reportChange();
     }
 
     deleteCard = (key) => {
         this.props.deleteCard(key);
-        // Can't use getter through props (evaluates in parent) so must explicitly call this function.
         this.setState({ listOfCards: this.props.getListOfCards() });
-        message.success("Deleted card!")
+        this.props.reportChange();
     };
 
     editCard = (key, values) => {
         this.props.editCard(key, values);
         this.setState({ listOfCards: this.props.getListOfCards() });
+        this.props.reportChange();
     }
 
     render() {
