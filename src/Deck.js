@@ -38,11 +38,11 @@ export class Deck {
         this.nextKey = 0;
         this.active = [];
         this.uniqueCycleOfCards = [];
-        this.tags = {};
+        this.tagCounts = {};
     }
 
     get listOfTags() {
-        return Object.keys(this.tags);
+        return Object.keys(this.tagCounts);
     }
 
     getListOfCards() {
@@ -60,30 +60,42 @@ export class Deck {
         card.key = this.nextKey;
         this.nextKey++;
         this.cards[card.key] = card;
-        // Just keep track of all tags. Boolean unused.
-        card.tags.forEach((tag) => { this.tags[tag] = true });
+        // Keep count of all tags
+        card.tags.forEach((tag) => { this.tagCounts.hasOwnProperty(tag) ? this.tagCounts[tag] += 1 : this.tagCounts[tag] = 1 });
     }
 
     deleteCard(key) {
-        this.cards[key].tags.forEach((tag) => {
-            // Clean up empty tags
-        });
+        this.cards[key].tags.forEach((tag) => { this.tagCounts[tag] -= 1 });
+        console.log(this.cards[key]);
+        this.cleanEmptyTags(key);
+
         delete this.cards[key];
     }
 
     editCard(key, values) {
+        this.cards[key].tags.forEach((tag) => { this.tagCounts[tag] -= 1 });
+        values.tags.forEach((tag) => { this.tagCounts.hasOwnProperty(tag) ? this.tagCounts[tag] += 1 : this.tagCounts[tag] = 1 });
+        this.cleanEmptyTags(key);
+        
         this.cards[key] = new FlashCard(values.front, values.back, values.tags, key);
-        values.tags.forEach((tag) => { this.tags[tag] = true });
+    }
+
+    cleanEmptyTags(key) {
+        this.cards[key].tags.forEach((tag) => {
+            if (this.tagCounts[tag] === 0)
+                delete this.tagCounts[tag];
+        });
     }
 
     rebuildActive(activeTags) {
         // Reset active cards, tags, and usedInActive flags
+        this.activeTags = activeTags || this.activeTags || [];
         this.active = [];
         const usedInActive = {};
 
         // Add all cards with selected tags
         for (let [key, card] of Object.entries(this.cards)) {
-            for (let tag of activeTags) {
+            for (let tag of this.activeTags) {
                 // Avoid appending duplicate cards
                 if (card.isTagged(tag) && !usedInActive[key]) {
                     this.active.push(card);
@@ -227,19 +239,7 @@ export function buildDefaultDeck(activeTags) {
         "パ", "ピ", "プ", "ペ", "ポ"
     ];
 
-    const katakanaYoOnPhonetic = ["キャ", "キュ", "キョ",
-        "シャ", "シュ", "ショ",
-        "チャ", "チュ", "チョ",
-        "ニャ", "ニュ", "ニョ",
-        "ヒャ", "ヒュ", "ヒョ",
-        "ミャ", "ミュ", "ミョ",
-        "リャ", "リュ", "リョ",
-        "ギャ", "ギュ", "ギョ",
-        "ジャ", "ジュ", "ジョ",
-        "ビャ", "ビュ", "ビョ",
-        "ピャ", "ピュ", "ピョ"
-    ];
-    const katakanaYoOn = ["kya", "kyu", "kyo",
+    const katakanaYoOnPhonetic = ["kya", "kyu", "kyo",
         "sha", "shu", "sho",
         "cha", "chu", "cho",
         "nya", "nyu", "nyo",
@@ -250,6 +250,18 @@ export function buildDefaultDeck(activeTags) {
         "ja", "ju", "jo",
         "bya", "byu", "byo",
         "pya", "pyu", "pyo",
+    ];
+    const katakanaYoOn = ["キャ", "キュ", "キョ",
+        "シャ", "シュ", "ショ",
+        "チャ", "チュ", "チョ",
+        "ニャ", "ニュ", "ニョ",
+        "ヒャ", "ヒュ", "ヒョ",
+        "ミャ", "ミュ", "ミョ",
+        "リャ", "リュ", "リョ",
+        "ギャ", "ギュ", "ギョ",
+        "ジャ", "ジュ", "ジョ",
+        "ビャ", "ビュ", "ビョ",
+        "ピャ", "ピュ", "ピョ"
     ];
 
     const katakanaForeignPhonetic = ["fa", "fi", "fe", "fo", "fyu",
