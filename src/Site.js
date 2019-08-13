@@ -15,7 +15,7 @@ class Site extends React.Component {
         this.closeModal = this.closeModal.bind(this);
         this.changeCard = this.changeCard.bind(this);
 
-        this.startingActive = [];
+        const startingActive = [];
 
         // Load existing values if they're there.
         let savedSettings = JSON.parse(localStorage.getItem("activeTags"));
@@ -23,16 +23,16 @@ class Site extends React.Component {
         if (savedSettings) {
             Object.entries(savedSettings).forEach(([tag, active]) => {
                 if (active)
-                    this.startingActive.push(tag);
+                    startingActive.push(tag);
             });
         } else {
             // Otherwise, default to having basic hiragana
-            this.startingActive.push("basic hiragana");
+            startingActive.push("basic hiragana");
             savedSettings = { "basic hiragana": true };
             localStorage.setItem("activeTags", JSON.stringify(savedSettings));
         }
 
-        this.deck = buildDefaultDeck(this.startingActive);
+        this.deck = buildDefaultDeck(startingActive);
 
         this.state = {
             currentCard: this.deck.getNextCard(),
@@ -40,6 +40,7 @@ class Site extends React.Component {
             prevSelected: "review",
             selected: "review"
         };
+        this.manageDeckChanged = false;
     }
 
     closeModal() {
@@ -47,6 +48,13 @@ class Site extends React.Component {
     }
 
     selectMenuItem(event) {
+        // Navigation away from ManageDeckPage should rebuild the deck to accomodate changes.
+        if (this.state.selected === "manage" && this.manageDeckChanged) {
+            this.deck.rebuildActive();
+            this.setState({ currentCard: this.deck.getNextCard() });
+            this.manageDeckChanged = false;
+        }
+
         this.setState({ selected: event.key, prevSelected: this.state.selected })
     }
 
@@ -72,7 +80,6 @@ class Site extends React.Component {
         switch (this.state.selected) {
             case "tags":
                 modal = <TagsModal
-                            startingActive={this.startingActive}
                             listOfTags={this.deck.listOfTags}
                             closeModal={this.closeModal}
                             rebuildActive={(activeTags) => { this.deck.rebuildActive(activeTags) }}
@@ -82,10 +89,12 @@ class Site extends React.Component {
                 break;
             case "manage":
                 this.activeMain = <ManageDeckPage visible={this.state.selected === "manage"}
-                                    allCards={this.deck.listOfCards}
-                                    appendCard={this.deck.append}
+                                    getCardFromKey={this.deck.getCardFromKey}
+                                    getListOfCards={this.deck.getListOfCards}
+                                    appendCard={this.deck.appendCard}
                                     editCard={this.deck.editCard}
-                                    deleteCard={this.deck.deleteCard}>
+                                    deleteCard={this.deck.deleteCard}
+                                    reportChange={()=>{ this.manageDeckChanged = true; }}>
                                 </ManageDeckPage>
                 break;
             case "review":
