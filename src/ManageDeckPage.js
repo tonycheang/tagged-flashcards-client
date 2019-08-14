@@ -72,7 +72,7 @@ class EditableTable extends React.Component {
                 title: "Tags",
                 dataIndex: "tags",
                 width: "40%",
-                filters: this.props.listOfTags.map((tag) => { return {text: tag, value: tag} }),
+                filters: this.props.deckOps.listOfTags.map((tag) => { return {text: tag, value: tag} }),
                 onFilter: (value, record) => { return record.isTagged(value) },
                 render: (text, record, dataIndex) => {
                     const editable = this.isEditing(record);
@@ -126,7 +126,7 @@ class EditableTable extends React.Component {
                                 </Button>
                                 <Divider type="vertical" />
                                 <Popconfirm title="Delete this card?" okType="primary" okText="Delete"
-                                    onConfirm={() => { this.props.deleteCard(record.key); 
+                                    onConfirm={() => { this.props.deckOps.deleteCard(record.key); 
                                                         message.success("Deleted card!"); }}>
                                     <Button size="small" type="link">Delete</Button>
                                 </Popconfirm>
@@ -142,7 +142,7 @@ class EditableTable extends React.Component {
 
     makeNewRow = () => {
         const newCard = new FlashCard("", "");
-        this.props.appendCard(newCard, true);
+        this.props.deckOps.appendCard(newCard, true);
 
         this.setState({
             rowTags: [],
@@ -167,7 +167,8 @@ class EditableTable extends React.Component {
     }
 
     edit(key) {
-        const rowTags = this.props.getCardFromKey(key).tags || [];
+        // Pull existing tags for editing
+        const rowTags = this.props.deckOps.getCardFromKey(key).tags || [];
         this.setState({ editingKey: key, rowTags });
     }
 
@@ -175,7 +176,7 @@ class EditableTable extends React.Component {
         if (this.state.creatingNewCard) {
             const { editingKey } = this.state;
             this.setState({ creatingNewCard: false });
-            this.props.deleteCard(editingKey, true);
+            this.props.deckOps.deleteCard(editingKey);
         }
         this.setState({ editingKey: '' });
     }
@@ -200,7 +201,7 @@ class EditableTable extends React.Component {
             }
 
             values.tags = this.state.rowTags;
-            this.props.editCard(key, values, this.state.creatingNewCard);
+            this.props.deckOps.editCard(key, values);
 
             if (this.state.creatingNewCard)
                 message.success("Created card!");
@@ -230,16 +231,13 @@ class EditableTable extends React.Component {
             }
         });
 
-        console.log(columns);
-
         return <EditableContext.Provider value={this.props.form}>
             <Table components={components}
                 dataSource={this.props.dataSource}
                 columns={columns}
                 pagination={{ onChange: this.cancel }} 
                 title={this.renderTableHeader}
-                bordered
-                />
+                bordered />
         </EditableContext.Provider>
     }
 }
@@ -249,27 +247,33 @@ const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableT
 class ManageDeckPage extends React.Component {
     // Data lives here to refresh table component upon change
     state = {
-        listOfCards: this.props.getListOfCards()
+        listOfCards: this.props.deckOps.getListOfCards()
     };
 
-    appendCard = (newCard) => {
-        this.props.appendCard(newCard);
+    appendCard = (...args) => {
+        this.props.deckOps.appendCard(...args);
         // Can't use getter through props (evaluates in parent) so must explicitly call this function.
-        this.setState({ listOfCards: this.props.getListOfCards() });
-        // For Site to check if it needs to rebuild the deck
-        this.props.reportChange();
+        // Used to refresh table upon change.
+        this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
     }
 
-    deleteCard = (key) => {
-        this.props.deleteCard(key);
-        this.setState({ listOfCards: this.props.getListOfCards() });
-        this.props.reportChange();
+    deleteCard = (...args) => {
+        this.props.deckOps.deleteCard(...args);
+        this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
     };
 
-    editCard = (key, values) => {
-        this.props.editCard(key, values);
-        this.setState({ listOfCards: this.props.getListOfCards() });
-        this.props.reportChange();
+    editCard = (...args) => {
+        this.props.deckOps.editCard(...args);
+        this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+    }
+
+    get deckOps() {
+        return {
+            ...this.props.deckOps,
+            appendCard: this.appendCard,
+            deleteCard: this.deleteCard,
+            editCard: this.editCard
+        }
     }
 
     render() {
@@ -277,12 +281,7 @@ class ManageDeckPage extends React.Component {
         // Or what happens when adding to top, then deleting a card below that?
         return (
             <Card style={{margin: "2% 5% 2% 5%"}}>
-                <EditableFormTable dataSource={this.state.listOfCards} 
-                    getCardFromKey={this.props.getCardFromKey}
-                    appendCard={this.appendCard}
-                    editCard={this.editCard}
-                    deleteCard={this.deleteCard}
-                    listOfTags={this.props.listOfTags}/>
+                <EditableFormTable dataSource={this.state.listOfCards} deckOps={this.deckOps} />
             </Card>
         )
     }
