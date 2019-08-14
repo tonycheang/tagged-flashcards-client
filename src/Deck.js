@@ -66,9 +66,7 @@ export class Deck {
 
     deleteCard(key) {
         this.cards[key].tags.forEach((tag) => { this.tagCounts[tag] -= 1 });
-        console.log(this.cards[key]);
         this.cleanEmptyTags(key);
-
         delete this.cards[key];
     }
 
@@ -129,6 +127,39 @@ export class Deck {
 
         // Can add SRS system here with heap later
         return this.uniqueCycleOfCards.pop();
+    }
+
+    static buildFromJSON(json) {
+
+        const newDeck = new Deck();
+        const parsed = JSON.parse(json);
+
+        // Copy values from JSON to the empty deck.
+        Object.keys(parsed).forEach((key) => { newDeck[key] = parsed[key] });
+
+        // Ensures objects get converted to FlashCard objects.
+        if (newDeck.cards) {
+            Object.entries(newDeck.cards).forEach(([key, obj]) => {
+                const { front, back, tags } = obj;
+                newDeck.cards[key] = new FlashCard(front, back, tags, key);
+            });
+        }
+
+        if (newDeck.uniqueCycleOfCards) {
+            newDeck.uniqueCycleOfCards = newDeck.uniqueCycleOfCards.map((obj, i) => {
+                const { front, back, tags, key } = obj;
+                return new FlashCard(front, back, tags, key);
+            });
+        }
+
+        if (newDeck.active) {
+            newDeck.active = newDeck.active.map((obj, i) => {
+                const { front, back, tags, key } = obj;
+                return new FlashCard(front, back, tags, key);
+            });
+        }
+
+        return newDeck;
     }
 }
 
