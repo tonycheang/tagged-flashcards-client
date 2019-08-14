@@ -1,6 +1,6 @@
 import React from 'react';
-import { buildDefaultDeck } from './Deck'
-import { Icon, Menu, Layout } from "antd"
+import { buildDefaultDeck, Deck } from './Deck'
+import { Icon, Menu, Layout, message } from "antd"
 import FlashCardApp from './FlashCardApp';
 import TagsModal from './TagsModal'
 import ManageDeckPage from './ManageDeckPage'
@@ -30,9 +30,11 @@ class Site extends React.Component {
             startingActive.push("basic hiragana");
             savedSettings = { "basic hiragana": true };
             localStorage.setItem("activeTags", JSON.stringify(savedSettings));
+            message.success("Loaded default settings!");
         }
 
-        this.deck = buildDefaultDeck(startingActive);
+        let savedDeckJSON = localStorage.getItem("savedDeck");
+        this.deck = savedDeckJSON ? Deck.buildFromJSON(savedDeckJSON) : buildDefaultDeck(startingActive);
 
         this.state = {
             currentCard: this.deck.getNextCard(),
@@ -62,6 +64,33 @@ class Site extends React.Component {
         this.setState({ currentCard: this.deck.getNextCard() });
     }
 
+    get deckOps() {
+        const appendCard = (...args) => {
+            this.deck.appendCard(...args);
+            this.manageDeckChanged = true;
+            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
+        };
+        const editCard = (...args) => {
+            this.deck.editCard(...args);
+            this.manageDeckChanged = true;
+            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
+        };
+        const deleteCard = (...args) => {
+            this.deck.deleteCard(...args);
+            this.manageDeckChanged = true;
+            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
+        };
+
+        return {
+            listOfTags: this.deck.listOfTags,
+            getCardFromKey: this.deck.getCardFromKey,
+            getListOfCards: this.deck.getListOfCards,
+            appendCard,
+            editCard,
+            deleteCard
+        }
+    }
+
     render() {
         const navBar = <Menu mode="horizontal" style={{ height: "5%" }}
                             onClick={this.selectMenuItem}
@@ -88,14 +117,8 @@ class Site extends React.Component {
                         </TagsModal>
                 break;
             case "manage":
-                this.activeMain = <ManageDeckPage visible={this.state.selected === "manage"}
-                                    getCardFromKey={this.deck.getCardFromKey}
-                                    getListOfCards={this.deck.getListOfCards}
-                                    appendCard={this.deck.appendCard}
-                                    editCard={this.deck.editCard}
-                                    deleteCard={this.deck.deleteCard}
-                                    reportChange={()=>{ this.manageDeckChanged = true; }}>
-                                </ManageDeckPage>
+                this.activeMain = <ManageDeckPage visible={this.state.selected === "manage"} 
+                                    deckOps={this.deckOps}/>
                 break;
             case "review":
                 this.activeMain = <div>
