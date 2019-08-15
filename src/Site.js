@@ -35,6 +35,8 @@ class Site extends React.Component {
 
         let savedDeckJSON = localStorage.getItem("savedDeck");
         this.deck = savedDeckJSON ? Deck.buildFromJSON(savedDeckJSON) : buildDefaultDeck(startingActive);
+        // Since we do not serialize deck into savedDeck in TagsModal, we need to pull settings and rebuild.
+        this.deck.rebuildActive(startingActive);
 
         this.state = {
             currentCard: this.deck.getNextCard(),
