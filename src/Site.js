@@ -98,12 +98,16 @@ class Site extends React.Component {
                             onClick={this.selectMenuItem}
                             selectedKeys={[this.state.selected]}>
                             <Menu.Item key="review"><Icon type="home"></Icon>Review</Menu.Item>
-                            <Menu.Item key="tags"><Icon type="setting"></Icon>Active Tags</Menu.Item>
                             <Menu.Item key="manage"><Icon type="edit"></Icon>Manage Deck</Menu.Item>
                             <Menu.Item key="stats" disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
-                            <Menu.Item key="login" style={{ float: "right", marginRight: "2%" }} disabled>
+                            
+                            <Menu.Item key="login" style={ {float: "right"} } disabled>
                                 <Icon type="login"></Icon>
                                 Log In
+                            </Menu.Item>
+                            <Menu.Item key="tags" style={ {float: "right"} }>
+                                <Icon type="setting"></Icon>
+                                Active Tags
                             </Menu.Item>
                         </Menu>
 
