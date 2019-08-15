@@ -65,7 +65,7 @@ class TagsModal extends React.Component {
             Object.entries(this.tagsStatuses).forEach(([tag, active]) => {
                 savedSettings[tag] = active;
             })
-            localStorage.setItem("activeTags", JSON.stringify(savedSettings));
+            localStorage.setItem("activeTags", JSON.stringify(this.tagsStatuses));
 
             this.props.changeCard();
             message.success("Deck rebuilt!");
