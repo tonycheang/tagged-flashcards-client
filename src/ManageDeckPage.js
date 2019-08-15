@@ -41,6 +41,7 @@ class EditableCell extends React.Component {
 class EditableTable extends React.Component {
     constructor(props) {
         super(props);
+        this.handleTableChange = this.handleTableChange.bind(this);
         this.renderTableHeader = this.renderTableHeader.bind(this);
         this.isEditing = this.isEditing.bind(this);
         this.edit = this.edit.bind(this);
@@ -50,13 +51,15 @@ class EditableTable extends React.Component {
         this.state = {
             editingKey: '',
             refresh: false,
-            rowTags: []
+            rowTags: [],
+            sortedInfo: null
         };
 
         this.columns = [
             {
                 title: "Front",
                 dataIndex: "front",
+                key: "front",
                 width: "15%",
                 editable: true,
                 sorter: (a, b) => a.front.localeCompare(b.front),
@@ -64,6 +67,7 @@ class EditableTable extends React.Component {
             {
                 title: "Back",
                 dataIndex: "back",
+                key: "back",
                 width: "15%",
                 editable: true,
                 sorter: (a, b) => a.back.localeCompare(b.back)
@@ -71,9 +75,10 @@ class EditableTable extends React.Component {
             {
                 title: "Tags",
                 dataIndex: "tags",
+                key: "tags",
                 width: "40%",
                 filters: this.props.deckOps.listOfTags.map((tag) => { return {text: tag, value: tag} }),
-                onFilter: (value, record) => { return record.isTagged(value) },
+                onFilter: (value, record) => { return record.isTagged(value) || record.isNewCard },
                 render: (text, record, dataIndex) => {
                     const editable = this.isEditing(record);
 
@@ -92,6 +97,7 @@ class EditableTable extends React.Component {
             {
                 title: "Operations",
                 dataIndex: "operations",
+                key: "operations",
                 render: (text, record) => {
                     const { editingKey } = this.state;
                     const editable = this.isEditing(record);
@@ -140,17 +146,11 @@ class EditableTable extends React.Component {
         ];
     }
 
-    makeNewRow = () => {
-        const newCard = new FlashCard("", "");
-        this.props.deckOps.appendCard(newCard, true);
-
-        this.setState({
-            rowTags: [],
-            creatingNewCard: true,
-            editingKey: newCard.key
-        });
+    handleTableChange(pagination, filters, sorter) {
+        console.log('Various parameters', pagination, filters, sorter);
+        this.setState({ sortedInfo: sorter });
     }
-
+    
     renderTableHeader(){
         return (
             <span style={{ display: "inline-flex", width: "100%", justifyContent: "flex-end"}}>
@@ -160,6 +160,22 @@ class EditableTable extends React.Component {
                 </Button>
             </span>
         );
+    }
+
+    makeNewRow = () => {
+        const newCard = new FlashCard("", "");
+        // To help keep fields up top even if filters are on.
+        // Property goes away after editCard, since it create a new FlashCard.
+        newCard.isNewCard = true;
+        this.props.deckOps.appendCard(newCard);
+
+        this.setState({
+            // resets sorting to avoid form on bottom
+            sortedInfo: null,
+            rowTags: [],
+            creatingNewCard: true,
+            editingKey: newCard.key
+        });
     }
 
     isEditing(record) {
@@ -214,12 +230,16 @@ class EditableTable extends React.Component {
 
     render() {
         const components = { body: { cell: EditableCell } };
+        let { sortedInfo } = this.state;
+        sortedInfo = sortedInfo || {};
+
         const columns = this.columns.map((col) => {
             if (!col.editable)
                 return col;
 
             return {
                 ...col,
+                sortOrder: sortedInfo.columnKey === col.key && sortedInfo.order,
                 onCell: (record) => {
                     return {
                         record,
@@ -233,6 +253,7 @@ class EditableTable extends React.Component {
 
         return <EditableContext.Provider value={this.props.form}>
             <Table components={components}
+                onChange={this.handleTableChange}
                 dataSource={this.props.dataSource}
                 columns={columns}
                 pagination={{ onChange: this.cancel }} 
@@ -277,8 +298,6 @@ class ManageDeckPage extends React.Component {
     }
 
     render() {
-        // Don't necessarily always want to set data and refresh upon cancel. When?
-        // Or what happens when adding to top, then deleting a card below that?
         return (
             <Card style={{margin: "2% 5% 2% 5%"}}>
                 <EditableFormTable dataSource={this.state.listOfCards} deckOps={this.deckOps} />
