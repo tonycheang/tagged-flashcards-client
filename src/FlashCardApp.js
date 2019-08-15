@@ -1,7 +1,12 @@
 import React from 'react';
-import UserInputDisplay from './UserInputDisplay';
-import { Button, Card } from 'antd'
+import { Button, Card, Input } from 'antd'
 import './FlashCardApp.css';
+
+const inputFieldStyle = {
+  backgroundColor: "transparent",
+  fontSize: 20,
+  textAlign: "center"
+}
 
 class FlashCardApp extends React.Component {
   constructor(props) {
@@ -9,7 +14,6 @@ class FlashCardApp extends React.Component {
 
     this.handleInput = this.handleInput.bind(this);
     this.reportCorrectness = this.reportCorrectness.bind(this);
-    this.readForm = this.readForm.bind(this);
     this.showAnswer = this.showAnswer.bind(this);
     this.resetInputAfterTyping = this.resetInput.bind(this, 500);
     this.resetInputAfterReveal = this.resetInput.bind(this, 0, true);
@@ -67,14 +71,7 @@ class FlashCardApp extends React.Component {
     this.setState({ typingTimer: setTimeout(this.reportCorrectness, 300) });
   }
 
-  readForm(event) {
-    // Temp holder while using window.addEventListener("keydown", this.handleInput);
-    // console.log(event.target.value);
-  }
-
   showAnswer(event) {
-    // event.preventDefault();
-    // event.stopPropagation();
     if (this.state.firstTimeTyping)
       this.setState({ firstTimeTyping: false });
 
@@ -91,7 +88,6 @@ class FlashCardApp extends React.Component {
       return;
 
     let currentCard = this.props.currentCard;
-    console.log(currentCard);
     let answer = currentCard.back;
     let typed = this.state.typed.toLowerCase();
 
@@ -136,12 +132,16 @@ class FlashCardApp extends React.Component {
     return (
       <div align="center">
         <Card className="Card" style={{backgroundColor: this.state.backgroundColor}}>
-          <div style={{fontSize: 70, margin: "2%"}}>{card.front}</div>
-          <UserInputDisplay data={this.state.typed}
-            defaultText={defaultText}
-            textColor={this.state.textColor}
-            onChange={this.handleInput}>
-          </UserInputDisplay>
+          <div style={{fontSize: 70, margin: "2%"}}>
+            {card.front}
+          </div>
+          <div align="center" style={{margin: "2%", width: "80%"}}>
+                <Input autoFocus ghost="true"
+                    placeholder={defaultText}
+                    value={this.state.typed}
+                    style={inputFieldStyle}
+                    onChange={this.handleInput}/>
+            </div>
           <div>{displayButton}</div>
         </Card>  
       </div>
