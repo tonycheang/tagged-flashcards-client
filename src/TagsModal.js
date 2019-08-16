@@ -61,10 +61,6 @@ class TagsModal extends React.Component {
             this.props.rebuildActive(activeTags);
 
             // Record the changes in local storage via overwrite
-            let savedSettings = {};
-            Object.entries(this.tagsStatuses).forEach(([tag, active]) => {
-                savedSettings[tag] = active;
-            })
             localStorage.setItem("activeTags", JSON.stringify(this.tagsStatuses));
 
             this.props.changeCard();
