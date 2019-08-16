@@ -3,7 +3,7 @@ import { Form, Input, message, Popconfirm, Table, Tag } from 'antd';
 import { Card, Divider, Button, Icon } from 'antd'
 import EditableTagGroup from "./EditableTagGroup"
 import { FlashCard } from "./Deck"
-// import Highlighter from 'react-highlight-words';
+import Highlighter from 'react-highlight-words';
 
 const { Search } = Input;
 
@@ -58,6 +58,14 @@ class EditableTable extends React.Component {
             sortedInfo: null
         };
 
+        const renderHighlighter = (text) => {
+            return <Highlighter 
+                highlightStyle={{ backgroundColor: '#ffc069', padding: 0 }}
+                searchWords={[this.state.searchInput]}
+                autoEscape
+                textToHighlight={text.toString()}/>
+        }
+
         this.columns = [
             {
                 title: "Front",
@@ -65,7 +73,8 @@ class EditableTable extends React.Component {
                 key: "front",
                 width: "15%",
                 editable: true,
-                sorter: (a, b) => a.front.localeCompare(b.front)
+                sorter: (a, b) => a.front.localeCompare(b.front),
+                render: renderHighlighter
             },
             {
                 title: "Back",
@@ -73,7 +82,8 @@ class EditableTable extends React.Component {
                 key: "back",
                 width: "15%",
                 editable: true,
-                sorter: (a, b) => a.back.localeCompare(b.back)
+                sorter: (a, b) => a.back.localeCompare(b.back),
+                render: renderHighlighter
             },
             {
                 title: "Tags",
