@@ -24,6 +24,10 @@ export class FlashCard {
     startsWith(input) {
         return input === this.back.slice(0, input.length);
     }
+
+    includes(substring) {
+        return this.front.toLowerCase().includes(substring) || this.back.toLowerCase().includes(substring);
+    }
 }
 
 export class Deck {
