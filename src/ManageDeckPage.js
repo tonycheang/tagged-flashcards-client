@@ -3,6 +3,9 @@ import { Form, Input, message, Popconfirm, Table, Tag } from 'antd';
 import { Card, Divider, Button, Icon } from 'antd'
 import EditableTagGroup from "./EditableTagGroup"
 import { FlashCard } from "./Deck"
+// import Highlighter from 'react-highlight-words';
+
+const { Search } = Input;
 
 const EditableContext = React.createContext();
 
@@ -42,14 +45,14 @@ class EditableTable extends React.Component {
     constructor(props) {
         super(props);
         this.handleTableChange = this.handleTableChange.bind(this);
-        this.renderTableHeader = this.renderTableHeader.bind(this);
         this.isEditing = this.isEditing.bind(this);
         this.edit = this.edit.bind(this);
         this.cancel = this.cancel.bind(this);
         this.save = this.save.bind(this);
 
         this.state = {
-            editingKey: '',
+            searchInput: "",
+            editingKey: "",
             refresh: false,
             rowTags: [],
             sortedInfo: null
@@ -62,7 +65,7 @@ class EditableTable extends React.Component {
                 key: "front",
                 width: "15%",
                 editable: true,
-                sorter: (a, b) => a.front.localeCompare(b.front),
+                sorter: (a, b) => a.front.localeCompare(b.front)
             },
             {
                 title: "Back",
@@ -83,7 +86,6 @@ class EditableTable extends React.Component {
                     const editable = this.isEditing(record);
 
                     if (editable) {
-                        // will IMMEDIATELY set tags. need to wait till save or cancel!
                         return <EditableTagGroup tags={this.state.rowTags} 
                                     setTags={ (rowTags) => { this.setState({ rowTags }) } }/>
                     } else {
@@ -147,19 +149,8 @@ class EditableTable extends React.Component {
     }
 
     handleTableChange(pagination, filters, sorter) {
-        console.log('Various parameters', pagination, filters, sorter);
+        // console.log('Various parameters', pagination, filters, sorter);
         this.setState({ sortedInfo: sorter });
-    }
-    
-    renderTableHeader(){
-        return (
-            <span style={{ display: "inline-flex", width: "100%", justifyContent: "flex-end"}}>
-                <Button onClick={this.makeNewRow} disabled={this.state.editingKey !== ''}>
-                    <Icon type="plus"/>
-                    New Card
-                </Button>
-            </span>
-        );
     }
 
     makeNewRow = () => {
@@ -171,6 +162,7 @@ class EditableTable extends React.Component {
 
         this.setState({
             // resets sorting to avoid form on bottom
+            // Does not reset search filter to go back to search after addition of new card
             sortedInfo: null,
             rowTags: [],
             creatingNewCard: true,
@@ -229,6 +221,24 @@ class EditableTable extends React.Component {
     }
 
     render() {
+        const renderTableHeader = () => {
+            const handleSearchChange = (event) => {
+                const { value } = event.target;
+                this.setState({ searchInput: value });
+            };
+            return (
+                <span style={{ display: "inline-flex", width: "100%", justifyContent: "flex-end" }}>
+                    <Search placeholder="Search"
+                        style={{ marginRight: "2%" }}
+                        onChange={handleSearchChange} />
+                    <Button onClick={this.makeNewRow} disabled={this.state.editingKey !== ''}>
+                        <Icon type="plus" />
+                        New Card
+                    </Button>
+                </span>
+            );
+        }
+
         const components = { body: { cell: EditableCell } };
         let { sortedInfo } = this.state;
         sortedInfo = sortedInfo || {};
@@ -251,13 +261,18 @@ class EditableTable extends React.Component {
             }
         });
 
+        let data = this.props.dataSource;
+        if (!this.state.creatingNewCard) {
+            data = data.filter((item) => item.includes(this.state.searchInput));
+        }
+
         return <EditableContext.Provider value={this.props.form}>
             <Table components={components}
                 onChange={this.handleTableChange}
-                dataSource={this.props.dataSource}
+                dataSource={data}
                 columns={columns}
                 pagination={{ onChange: this.cancel }} 
-                title={this.renderTableHeader}
+                title={renderTableHeader}
                 bordered />
         </EditableContext.Provider>
     }
