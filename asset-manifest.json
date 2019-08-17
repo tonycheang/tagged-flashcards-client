@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/japanese-flash-cards/static/css/main.737fec2c.chunk.css",
-    "main.js": "/japanese-flash-cards/static/js/main.b6241e36.chunk.js",
-    "main.js.map": "/japanese-flash-cards/static/js/main.b6241e36.chunk.js.map",
+    "main.css": "/japanese-flash-cards/static/css/main.2193643b.chunk.css",
+    "main.js": "/japanese-flash-cards/static/js/main.2fcb8503.chunk.js",
+    "main.js.map": "/japanese-flash-cards/static/js/main.2fcb8503.chunk.js.map",
     "runtime~main.js": "/japanese-flash-cards/static/js/runtime~main.e143d4ba.js",
     "runtime~main.js.map": "/japanese-flash-cards/static/js/runtime~main.e143d4ba.js.map",
-    "static/css/2.0cdb9ae6.chunk.css": "/japanese-flash-cards/static/css/2.0cdb9ae6.chunk.css",
-    "static/js/2.0e627287.chunk.js": "/japanese-flash-cards/static/js/2.0e627287.chunk.js",
-    "static/js/2.0e627287.chunk.js.map": "/japanese-flash-cards/static/js/2.0e627287.chunk.js.map",
+    "static/css/2.7c2c7a7e.chunk.css": "/japanese-flash-cards/static/css/2.7c2c7a7e.chunk.css",
+    "static/js/2.45547239.chunk.js": "/japanese-flash-cards/static/js/2.45547239.chunk.js",
+    "static/js/2.45547239.chunk.js.map": "/japanese-flash-cards/static/js/2.45547239.chunk.js.map",
     "index.html": "/japanese-flash-cards/index.html",
-    "precache-manifest.7f65b73325442d39c387bcf5de48e354.js": "/japanese-flash-cards/precache-manifest.7f65b73325442d39c387bcf5de48e354.js",
+    "precache-manifest.7a3238347d99de668a6b589e1b9e8fe8.js": "/japanese-flash-cards/precache-manifest.7a3238347d99de668a6b589e1b9e8fe8.js",
     "service-worker.js": "/japanese-flash-cards/service-worker.js",
-    "static/css/2.0cdb9ae6.chunk.css.map": "/japanese-flash-cards/static/css/2.0cdb9ae6.chunk.css.map",
-    "static/css/main.737fec2c.chunk.css.map": "/japanese-flash-cards/static/css/main.737fec2c.chunk.css.map"
+    "static/css/2.7c2c7a7e.chunk.css.map": "/japanese-flash-cards/static/css/2.7c2c7a7e.chunk.css.map",
+    "static/css/main.2193643b.chunk.css.map": "/japanese-flash-cards/static/css/main.2193643b.chunk.css.map"
   }
 }
