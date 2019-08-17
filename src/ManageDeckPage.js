@@ -54,6 +54,7 @@ class EditableTable extends React.Component {
         this.state = {
             searchInput: "",
             editingKey: "",
+            currentPage: 1,
             refresh: false,
             rowTags: [],
             sortedInfo: null
@@ -160,8 +161,7 @@ class EditableTable extends React.Component {
     }
 
     handleTableChange(pagination, filters, sorter) {
-        // console.log('Various parameters', pagination, filters, sorter);
-        this.setState({ sortedInfo: sorter });
+        this.setState({ sortedInfo: sorter, currentPage: pagination.current });
     }
 
     makeNewRow = () => {
@@ -172,9 +172,10 @@ class EditableTable extends React.Component {
         this.props.deckOps.appendCard(newCard);
 
         this.setState({
-            // resets sorting to avoid form on bottom
-            // Does not reset search filter to go back to search after addition of new card
+            // Resets sorting and pagination to avoid form not shown.
+            // Does not reset search filter to go back to search after addition of new card.
             sortedInfo: null,
+            currentPage: 1,
             rowTags: [],
             creatingNewCard: true,
             editingKey: newCard.key
@@ -284,6 +285,7 @@ class EditableTable extends React.Component {
                 columns={columns}
                 pagination={{ onChange: this.cancel }} 
                 title={renderTableHeader}
+                pagination={{ current: this.state.currentPage }}
                 bordered />
         </EditableContext.Provider>
     }
