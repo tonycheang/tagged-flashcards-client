@@ -53,13 +53,13 @@ class FlashCardApp extends React.Component {
     }
 
     let curText = this.state.typed;
-    let isLetter = /^\w$/;
+    let isCharacter = /^.$/;
     if (event.key === "Backspace") {
       if (curText.length > 0) {
         this.setState({ typed: curText.slice(0, curText.length - 1) })
       }
-    // should test for other allowable keys here (sentences have punctuation)
-    } else if (isLetter.test(event.key) || event.key === " ") {
+      // should test for other allowable keys here (sentences have punctuation)
+    } else if (isCharacter.test(event.key)) {
       this.setState((state) => state.typed += event.key)
     } else {
       // Do not extend timer for input or report correctness
@@ -110,7 +110,7 @@ class FlashCardApp extends React.Component {
   resetInput(delay, nextCard) {
     /* Used to create partial functions via method.bind() for callback */
     if (nextCard) {
-      this.setState({typed: ""})
+      this.setState({ typed: "" })
       this.props.changeCard();
     }
     setTimeout(() => this.setState({ backgroundColor: this.defaultBackgroundColor, border: "1px solid" }), delay)
@@ -133,19 +133,19 @@ class FlashCardApp extends React.Component {
     return (
       <ErrorBoundary>
         <div align="center">
-          <Card className="Card" style={{backgroundColor: this.state.backgroundColor}}>
-            <div style={{fontSize: 70, margin: "2%"}}>
+          <Card className="Card" style={{ backgroundColor: this.state.backgroundColor }}>
+            <div style={{ fontSize: 70, margin: "2%" }}>
               {card.front}
             </div>
-            <div align="center" style={{margin: "2%", width: "80%"}}>
-                  <Input autoFocus ghost="true"
-                      placeholder={defaultText}
-                      value={this.state.typed}
-                      style={inputFieldStyle}
-                      onChange={this.handleInput}/>
-              </div>
+            <div align="center" style={{ margin: "2%", width: "80%" }}>
+              <Input autoFocus ghost="true"
+                placeholder={defaultText}
+                value={this.state.typed}
+                style={inputFieldStyle}
+                onChange={this.handleInput} />
+            </div>
             <div>{displayButton}</div>
-          </Card>  
+          </Card>
         </div>
       </ErrorBoundary>
     )
