@@ -1,5 +1,6 @@
 import React from 'react';
-import { Button, Card, Input } from 'antd'
+import { Button, Card, Input } from 'antd';
+import ErrorBoundary from './ErrorBoundary';
 import './FlashCardApp.css';
 
 const inputFieldStyle = {
@@ -130,21 +131,23 @@ class FlashCardApp extends React.Component {
         style={{ backgroundColor: "transparent", margin: "2%" }}>show</Button>
 
     return (
-      <div align="center">
-        <Card className="Card" style={{backgroundColor: this.state.backgroundColor}}>
-          <div style={{fontSize: 70, margin: "2%"}}>
-            {card.front}
-          </div>
-          <div align="center" style={{margin: "2%", width: "80%"}}>
-                <Input autoFocus ghost="true"
-                    placeholder={defaultText}
-                    value={this.state.typed}
-                    style={inputFieldStyle}
-                    onChange={this.handleInput}/>
+      <ErrorBoundary>
+        <div align="center">
+          <Card className="Card" style={{backgroundColor: this.state.backgroundColor}}>
+            <div style={{fontSize: 70, margin: "2%"}}>
+              {card.front}
             </div>
-          <div>{displayButton}</div>
-        </Card>  
-      </div>
+            <div align="center" style={{margin: "2%", width: "80%"}}>
+                  <Input autoFocus ghost="true"
+                      placeholder={defaultText}
+                      value={this.state.typed}
+                      style={inputFieldStyle}
+                      onChange={this.handleInput}/>
+              </div>
+            <div>{displayButton}</div>
+          </Card>  
+        </div>
+      </ErrorBoundary>
     )
   };
 }

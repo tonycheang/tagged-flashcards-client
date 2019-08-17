@@ -3,8 +3,9 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import Site from './Site';
 import * as serviceWorker from './serviceWorker';
+import ErrorBoundary from './ErrorBoundary'
 
-ReactDOM.render(<Site />, document.getElementById('root'));
+ReactDOM.render(<ErrorBoundary><Site /></ErrorBoundary>, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

@@ -1,10 +1,11 @@
 import React from 'react';
-import { buildDefaultDeck, Deck } from './Deck'
-import { Icon, Menu, Layout, message } from "antd"
+import { buildDefaultDeck, Deck } from './Deck';
+import { Icon, Menu, Layout, message } from "antd";
 import FlashCardApp from './FlashCardApp';
-import TagsModal from './TagsModal'
-import ManageDeckPage from './ManageDeckPage'
-import "./Site.css"
+import TagsModal from './TagsModal';
+import ManageDeckPage from './ManageDeckPage';
+import ErrorBoundary from './ErrorBoundary';
+import "./Site.css";
 
 const { Content } = Layout;
 
@@ -144,10 +145,12 @@ class Site extends React.Component {
         return (
             <Layout>
                 {navBar}
-                {modal}
-                <Content>
-                {this.activeMain}
-                </Content>
+                    <ErrorBoundary>
+                    {modal}
+                    <Content>
+                    {this.activeMain}
+                    </Content>
+                </ErrorBoundary>
             </Layout>
         )
     }

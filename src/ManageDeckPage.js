@@ -1,9 +1,10 @@
 import React from 'react';
 import { Form, Input, message, Popconfirm, Table, Tag } from 'antd';
-import { Card, Divider, Button, Icon } from 'antd'
-import EditableTagGroup from "./EditableTagGroup"
-import { FlashCard } from "./Deck"
+import { Card, Divider, Button, Icon } from 'antd';
+import EditableTagGroup from "./EditableTagGroup";
+import { FlashCard } from "./Deck";
 import Highlighter from 'react-highlight-words';
+import ErrorBoundary from './ErrorBoundary';
 
 const { Search } = Input;
 
@@ -296,37 +297,38 @@ class ManageDeckPage extends React.Component {
         listOfCards: this.props.deckOps.getListOfCards()
     };
 
-    appendCard = (...args) => {
-        this.props.deckOps.appendCard(...args);
-        // Can't use getter through props (evaluates in parent) so must explicitly call this function.
-        // Used to refresh table upon change.
-        this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
-    }
-
-    deleteCard = (...args) => {
-        this.props.deckOps.deleteCard(...args);
-        this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
-    };
-
-    editCard = (...args) => {
-        this.props.deckOps.editCard(...args);
-        this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
-    }
-
     get deckOps() {
+        const appendCard = (...args) => {
+            this.props.deckOps.appendCard(...args);
+            // Can't use getter through props (evaluates in parent) so must explicitly call this function.
+            // Used to refresh table upon change.
+            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+        }
+    
+        const deleteCard = (...args) => {
+            this.props.deckOps.deleteCard(...args);
+            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+        };
+    
+        const editCard = (...args) => {
+            this.props.deckOps.editCard(...args);
+            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+        }
         return {
             ...this.props.deckOps,
-            appendCard: this.appendCard,
-            deleteCard: this.deleteCard,
-            editCard: this.editCard
+            appendCard,
+            deleteCard,
+            editCard
         }
     }
 
     render() {
         return (
-            <Card style={{margin: "2% 5% 2% 5%"}}>
-                <EditableFormTable dataSource={this.state.listOfCards} deckOps={this.deckOps} />
-            </Card>
+            <ErrorBoundary>
+                <Card style={{margin: "2% 5% 2% 5%"}}>
+                    <EditableFormTable dataSource={this.state.listOfCards} deckOps={this.deckOps} />
+                </Card>
+            </ErrorBoundary>
         )
     }
 }

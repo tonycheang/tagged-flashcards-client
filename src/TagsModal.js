@@ -1,5 +1,6 @@
 import React from 'react';
-import { Table, Modal, Switch, message } from "antd"
+import { Table, Modal, Switch, message } from "antd";
+import ErrorBoundary from './ErrorBoundary';
 
 class TagsModal extends React.Component {
     constructor(props) {
@@ -77,13 +78,15 @@ class TagsModal extends React.Component {
         });
 
         return (
-            <Modal title="Active Categories"
-                visible={this.props.visible}
-                onCancel={this.handleClose}
-                cancelButtonProps={{ disabled: true }}
-                onOk={this.handleClose}>
-                <Table columns={this.columns} dataSource={dataSource}></Table>
-            </Modal>
+            <ErrorBoundary>
+                <Modal title="Active Categories"
+                    visible={this.props.visible}
+                    onCancel={this.handleClose}
+                    cancelButtonProps={{ disabled: true }}
+                    onOk={this.handleClose}>
+                    <Table columns={this.columns} dataSource={dataSource}></Table>
+                </Modal>
+            </ErrorBoundary>
         );
     }
 }
