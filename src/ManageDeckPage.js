@@ -283,9 +283,8 @@ class EditableTable extends React.Component {
                 onChange={this.handleTableChange}
                 dataSource={data}
                 columns={columns}
-                pagination={{ onChange: this.cancel }} 
+                pagination={{ onChange: this.cancel, current: this.state.currentPage }} 
                 title={renderTableHeader}
-                pagination={{ current: this.state.currentPage }}
                 bordered />
         </EditableContext.Provider>
     }
