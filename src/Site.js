@@ -2,7 +2,7 @@ import React from 'react';
 import { buildDefaultDeck, Deck } from './Deck';
 import { Icon, Menu, Layout, message } from "antd";
 import FlashCardApp from './FlashCardApp';
-import TagsModal from './TagsModal';
+import TransferTagsModal from './TransferTagsModal';
 import ManageDeckPage from './ManageDeckPage';
 import ErrorBoundary from './ErrorBoundary';
 import "./Site.css";
@@ -83,6 +83,11 @@ class Site extends React.Component {
             this.manageDeckChanged = true;
             localStorage.setItem("savedDeck", JSON.stringify(this.deck));
         };
+        const deleteCards = (keys) => {
+            keys.forEach((key) => this.deck.deleteCard(key));
+            this.manageDeckChanged = true;
+            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
+        }
 
         return {
             listOfTags: this.deck.listOfTags,
@@ -90,7 +95,8 @@ class Site extends React.Component {
             getListOfCards: this.deck.getListOfCards,
             appendCard,
             editCard,
-            deleteCard
+            deleteCard,
+            deleteCards
         }
     }
 
@@ -115,13 +121,13 @@ class Site extends React.Component {
         let modal;
         switch (this.state.selected) {
             case "tags":
-                modal = <TagsModal
+                modal = <TransferTagsModal 
                             listOfTags={this.deck.listOfTags}
                             closeModal={this.closeModal}
                             rebuildActive={(activeTags) => { this.deck.rebuildActive(activeTags) }}
                             changeCard={this.changeCard}
                             visible={this.state.selected === "tags"}>
-                        </TagsModal>
+                        </TransferTagsModal>
                 break;
             case "manage":
                 this.activeMain = <ManageDeckPage visible={this.state.selected === "manage"} 

@@ -46,7 +46,7 @@ export class Deck {
     }
 
     get listOfTags() {
-        return Object.keys(this.tagCounts);
+        return Object.keys(this.tagCounts).reverse();
     }
 
     getListOfCards() {
