@@ -35,6 +35,10 @@ class TransferTagsModal extends React.Component {
         };
     }
 
+    searchFilter = (input, entry) => {
+        return entry.tag.toLowerCase().includes(input.toLowerCase());
+    }
+
     handleChange = (nextTargetKeys, direction, moveKeys) => {
         this.setState({ rightColumnKeys: nextTargetKeys });
     }
@@ -91,6 +95,7 @@ class TransferTagsModal extends React.Component {
                             onChange={this.handleChange}
                             onSelectChange={this.handleSelectChange}
                             render={(item) => { return <Tag>{item.tag}</Tag> }}
+                            filterOption={this.searchFilter}
                             showSearch>
                         </Transfer>
                     </div>
