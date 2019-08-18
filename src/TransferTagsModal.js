@@ -47,13 +47,10 @@ class TransferTagsModal extends React.Component {
         const { rightColumnKeys } = this.state;
 
         // Determine if anything changed
-        // const diffA = rightColumnKeys.filter((key) => !this.startingRightColumnKeys.includes(key));
-        // const diffB = this.startingRightColumnKeys.filter((key) => !rightColumnKeys.includes(key));
-
         const shared = _.intersection(rightColumnKeys, this.startingRightColumnKeys);
-
-        // Rebuild deck with active tags
         if (shared.length !== rightColumnKeys.length || shared.length !== this.startingRightColumnKeys.length) {
+            
+            // Rebuild deck with active tags
             let activeTags = rightColumnKeys.map((key) => { return this.keysToTags[key]});
             this.props.rebuildActive(activeTags);
 
@@ -86,14 +83,15 @@ class TransferTagsModal extends React.Component {
                     onCancel={this.props.closeModal}
                     onOk={this.handleClose}>
                     <div style={{ display: "flex", justifyContent: "center", alignContent: "center" }}>
-                        <Transfer
+                        <Transfer listStyle={{ height: 450 }}
                             dataSource={keyedTags}
                             titles={["Inactive", "Active"]}
                             targetKeys={rightColumnKeys}
                             selectedKeys={selectedKeys}
                             onChange={this.handleChange}
                             onSelectChange={this.handleSelectChange}
-                            render={(item) => { return <Tag>{item.tag}</Tag> }}>
+                            render={(item) => { return <Tag>{item.tag}</Tag> }}
+                            showSearch>
                         </Transfer>
                     </div>
                 </Modal>
