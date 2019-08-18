@@ -1,5 +1,5 @@
 import React from 'react';
-import { Form, Input, message, Popconfirm, Table, Tag } from 'antd';
+import { Form, Input, message, Popconfirm, Table, Tag, Tooltip } from 'antd';
 import { Card, Divider, Button, Icon } from 'antd';
 import EditableTagGroup from "./EditableTagGroup";
 import { FlashCard } from "./Deck";
@@ -11,12 +11,8 @@ const { Search } = Input;
 const EditableContext = React.createContext();
 
 class EditableCell extends React.Component {
-    constructor(props) {
-        super(props);
-        this.renderCell = this.renderCell.bind(this);
-    }
 
-    renderCell({ getFieldDecorator }) {
+    renderCell = ({ getFieldDecorator }) => {
         const { editing, dataIndex, title, inputType,
             record, index, children, ...restProps } = this.props;
 
@@ -45,15 +41,11 @@ class EditableCell extends React.Component {
 class EditableTable extends React.Component {
     constructor(props) {
         super(props);
-        this.handleTableChange = this.handleTableChange.bind(this);
-        this.isEditing = this.isEditing.bind(this);
-        this.edit = this.edit.bind(this);
-        this.cancel = this.cancel.bind(this);
-        this.save = this.save.bind(this);
 
         this.state = {
             searchInput: "",
             editingKey: "",
+            selectedRowKeys: [],
             currentPage: 1,
             refresh: false,
             rowTags: [],
@@ -91,7 +83,6 @@ class EditableTable extends React.Component {
                 title: "Tags",
                 dataIndex: "tags",
                 key: "tags",
-                width: "40%",
                 filters: this.props.deckOps.listOfTags.map((tag) => { return {text: tag, value: tag} }),
                 onFilter: (value, record) => { return record.isTagged(value) || record.isNewCard },
                 render: (text, record, dataIndex) => {
@@ -112,6 +103,7 @@ class EditableTable extends React.Component {
                 title: "Operations",
                 dataIndex: "operations",
                 key: "operations",
+                width: "20%",
                 render: (text, record) => {
                     const { editingKey } = this.state;
                     const editable = this.isEditing(record);
@@ -160,8 +152,24 @@ class EditableTable extends React.Component {
         ];
     }
 
-    handleTableChange(pagination, filters, sorter) {
+    handleTableChange = (pagination, filters, sorter) => {
         this.setState({ sortedInfo: sorter, currentPage: pagination.current });
+    }
+
+    onSelectChange = (selectedRowKeys) => {
+        this.setState({ selectedRowKeys });
+    }
+
+    onSelectAll = (selected, selectedRows, changeRows) => {
+        // Say number selected, create banner asking if they want to select ALL.
+        console.log(selected, selectedRows, changeRows);
+    }
+
+    deleteSelectedRows = () => {
+        const { selectedRowKeys } = this.state;
+        this.props.deckOps.deleteCards(selectedRowKeys);
+        message.success(`Deleted ${selectedRowKeys.length} cards!`);
+        this.setState({ selectedRowKeys: [] });
     }
 
     makeNewRow = () => {
@@ -175,6 +183,7 @@ class EditableTable extends React.Component {
             // Resets sorting and pagination to avoid form not shown.
             // Does not reset search filter to go back to search after addition of new card.
             sortedInfo: null,
+            selectedRowKeys: [],
             currentPage: 1,
             rowTags: [],
             creatingNewCard: true,
@@ -182,17 +191,17 @@ class EditableTable extends React.Component {
         });
     }
 
-    isEditing(record) {
+    isEditing = (record) => {
         return record.key === this.state.editingKey;
     }
 
-    edit(key) {
+    edit = (key) => {
         // Pull existing tags for editing
         const rowTags = this.props.deckOps.getCardFromKey(key).tags || [];
         this.setState({ editingKey: key, rowTags });
     }
 
-    cancel() {
+    cancel = () => {
         if (this.state.creatingNewCard) {
             const { editingKey } = this.state;
             this.setState({ creatingNewCard: false });
@@ -201,7 +210,7 @@ class EditableTable extends React.Component {
         this.setState({ editingKey: '' });
     }
 
-    save(form, key) {
+    save = (form, key) => {
         form.validateFields((err, values) => {
             if (err) return;
 
@@ -238,12 +247,29 @@ class EditableTable extends React.Component {
                 const { value } = event.target;
                 this.setState({ searchInput: value });
             };
+
+            const { selectedRowKeys } = this.state;
+
             return (
                 <span style={{ display: "inline-flex", width: "100%", justifyContent: "flex-end" }}>
                     <Search placeholder="Search"
-                        style={{ marginRight: "2%" }}
+                        style={{ marginRight: "1.5%" }}
                         onChange={handleSearchChange} />
-                    <Button onClick={this.makeNewRow} disabled={this.state.editingKey !== ''}>
+                    <div style={{ marginRight: "1.5%" }}>
+                        <Popconfirm title="Delete selected?" okType="primary" okText="Delete"
+                                onConfirm={this.deleteSelectedRows}
+                                disabled={selectedRowKeys.length === 0}>
+                            <Button 
+                                ghost type="danger" 
+                                disabled={selectedRowKeys.length === 0}>
+                                <Icon type="minus" />
+                                Delete
+                            </Button>
+                        </Popconfirm>
+                    </div>
+                    <Button ghost type="primary"
+                        onClick={this.makeNewRow} 
+                        disabled={this.state.editingKey !== ''}>
                         <Icon type="plus" />
                         New Card
                     </Button>
@@ -252,8 +278,9 @@ class EditableTable extends React.Component {
         }
 
         const components = { body: { cell: EditableCell } };
-        let { sortedInfo } = this.state;
+        let { sortedInfo, selectedRowKeys } = this.state;
         sortedInfo = sortedInfo || {};
+        const rowSelection = { selectedRowKeys , onChange: this.onSelectChange };
 
         const columns = this.columns.map((col) => {
             if (!col.editable)
@@ -280,7 +307,9 @@ class EditableTable extends React.Component {
 
         return <EditableContext.Provider value={this.props.form}>
             <Table components={components}
+                onSelectAll={this.onSelectAll}
                 onChange={this.handleTableChange}
+                rowSelection={rowSelection}
                 dataSource={data}
                 columns={columns}
                 pagination={{ onChange: this.cancel, current: this.state.currentPage }} 
@@ -310,6 +339,11 @@ class ManageDeckPage extends React.Component {
             this.props.deckOps.deleteCard(...args);
             this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
         };
+
+        const deleteCards = (...args) => {
+            this.props.deckOps.deleteCards(...args);
+            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+        }
     
         const editCard = (...args) => {
             this.props.deckOps.editCard(...args);
@@ -319,6 +353,7 @@ class ManageDeckPage extends React.Component {
             ...this.props.deckOps,
             appendCard,
             deleteCard,
+            deleteCards,
             editCard
         }
     }
