@@ -249,14 +249,13 @@ class EditableTable extends React.Component {
             };
 
             const { selectedRowKeys } = this.state;
+            const { dataSource } = this.props;
 
-            return (
-                <span style={{ display: "inline-flex", width: "100%", justifyContent: "flex-end" }}>
-                    <Search placeholder="Search"
-                        style={{ marginRight: "1.5%" }}
-                        onChange={handleSearchChange} />
-                    <div style={{ marginRight: "1.5%" }}>
-                        <Popconfirm title="Delete selected?" okType="primary" okText="Delete"
+            // reset to default deck button only appears with 0 cards
+            let deleteOrResetButton;
+            if (dataSource && dataSource.length > 0) {
+                deleteOrResetButton = (
+                    <Popconfirm title="Delete selected?" okType="primary" okText="Delete"
                                 onConfirm={this.deleteSelectedRows}
                                 disabled={selectedRowKeys.length === 0}>
                             <Button 
@@ -265,7 +264,24 @@ class EditableTable extends React.Component {
                                 <Icon type="minus" />
                                 Delete
                             </Button>
-                        </Popconfirm>
+                    </Popconfirm>
+                )
+            } else {
+                deleteOrResetButton = (
+                    <Button onClick={this.props.deckOps.resetDeck}>
+                        <Icon type="rollback"/>
+                        Default
+                    </Button>
+                )
+            }
+
+            return (
+                <span style={{ display: "inline-flex", width: "100%", justifyContent: "flex-end" }}>
+                    <Search placeholder="Search"
+                        style={{ marginRight: "1.5%" }}
+                        onChange={handleSearchChange} />
+                    <div style={{ marginRight: "1.5%" }}>
+                        {deleteOrResetButton}
                     </div>
                     <Button ghost type="primary"
                         onClick={this.makeNewRow} 
@@ -324,31 +340,30 @@ const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableT
 class ManageDeckPage extends React.Component {
     // Data lives here to refresh table component upon change
     state = {
-        listOfCards: this.props.deckOps.getListOfCards()
+        listOfCards: this.props.listOfCards
     };
 
-    get deckOps() {
-        const appendCard = (...args) => {
-            this.props.deckOps.appendCard(...args);
-            // Can't use getter through props (evaluates in parent) so must explicitly call this function.
-            // Used to refresh table upon change.
-            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
-        }
-    
-        const deleteCard = (...args) => {
-            this.props.deckOps.deleteCard(...args);
-            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
-        };
+    componentWillReceiveProps(nextProps) {
+        // When parent component gives a new list of cards, should update to it.
+        // This happens when the deck is reset, for example
+        const { listOfCards } = nextProps;
+        this.setState({ listOfCards });
+    }
 
-        const deleteCards = (...args) => {
-            this.props.deckOps.deleteCards(...args);
-            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+    get deckOps() {
+        const refreshListOfCards = (func) => {
+            return (...args) => {
+                func(...args);
+                // Can't use getter through props (evaluates in parent) so must explicitly call this function.
+                this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+            }
         }
-    
-        const editCard = (...args) => {
-            this.props.deckOps.editCard(...args);
-            this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
-        }
+
+        const appendCard = refreshListOfCards(this.props.deckOps.appendCard);
+        const deleteCard = refreshListOfCards(this.props.deckOps.deleteCard);
+        const deleteCards = refreshListOfCards(this.props.deckOps.deleteCards);
+        const editCard = refreshListOfCards(this.props.deckOps.editCard);
+
         return {
             ...this.props.deckOps,
             appendCard,
