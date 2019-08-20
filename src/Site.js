@@ -19,7 +19,7 @@ class Site extends React.Component {
         const startingActive = [];
 
         // Load existing values if they're there.
-        let savedSettings = JSON.parse(localStorage.getItem("activeTags"));
+        const savedSettings = JSON.parse(localStorage.getItem("activeTags"));
 
         if (savedSettings) {
             Object.entries(savedSettings).forEach(([tag, active]) => {
@@ -29,18 +29,18 @@ class Site extends React.Component {
         } else {
             // Otherwise, default to having basic hiragana
             startingActive.push("basic hiragana");
-            savedSettings = { "basic hiragana": true };
-            localStorage.setItem("activeTags", JSON.stringify(savedSettings));
+            localStorage.setItem("activeTags", JSON.stringify({ "basic hiragana": true }));
             message.success("Loaded default settings!");
         }
 
-        let savedDeckJSON = localStorage.getItem("savedDeck");
-        this.deck = savedDeckJSON ? Deck.buildFromJSON(savedDeckJSON) : buildDefaultDeck(startingActive);
+        const savedDeckJSON = localStorage.getItem("savedDeck");
+        const deck = savedDeckJSON ? Deck.buildFromJSON(savedDeckJSON) : buildDefaultDeck();
         // Since we do not serialize deck into savedDeck in TagsModal, we need to pull settings and rebuild.
-        this.deck.rebuildActive(startingActive);
+        deck.rebuildActive(startingActive);
 
         this.state = {
-            currentCard: this.deck.getNextCard(),
+            deck,
+            currentCard: deck.getNextCard(),
             menuOpen: false,
             prevSelected: "review",
             selected: "review"
@@ -55,8 +55,8 @@ class Site extends React.Component {
     selectMenuItem(event) {
         // Navigation away from ManageDeckPage should rebuild the deck to accomodate changes.
         if (this.state.selected === "manage" && this.manageDeckChanged) {
-            this.deck.rebuildActive();
-            this.setState({ currentCard: this.deck.getNextCard() });
+            this.state.deck.rebuildActive();
+            this.setState({ currentCard: this.state.deck.getNextCard() });
             this.manageDeckChanged = false;
         }
 
@@ -64,39 +64,38 @@ class Site extends React.Component {
     }
 
     changeCard() {
-        this.setState({ currentCard: this.deck.getNextCard() });
+        this.setState({ currentCard: this.state.deck.getNextCard() });
     }
 
     get deckOps() {
-        const appendCard = (...args) => {
-            this.deck.appendCard(...args);
-            this.manageDeckChanged = true;
-            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
-        };
-        const editCard = (...args) => {
-            this.deck.editCard(...args);
-            this.manageDeckChanged = true;
-            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
-        };
-        const deleteCard = (...args) => {
-            this.deck.deleteCard(...args);
-            this.manageDeckChanged = true;
-            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
-        };
-        const deleteCards = (keys) => {
-            keys.forEach((key) => this.deck.deleteCard(key));
-            this.manageDeckChanged = true;
-            localStorage.setItem("savedDeck", JSON.stringify(this.deck));
+        const { deck } = this.state;
+        const reportAndSaveChanges = (func) => {
+            return (...args) => {
+                func(...args);
+                this.manageDeckChanged = true;
+                localStorage.setItem("savedDeck", JSON.stringify(deck));
+            }
         }
 
+        const appendCard = reportAndSaveChanges(deck.appendCard);
+        const editCard = reportAndSaveChanges(deck.editCard);
+        const deleteCard = reportAndSaveChanges(deck.deleteCard);
+        const deleteCards = reportAndSaveChanges((keys) => { 
+            keys.forEach((key) => deck.deleteCard(key));
+        });
+        const resetDeck = reportAndSaveChanges(() => { 
+            this.setState({ deck: buildDefaultDeck() });
+        });
+
         return {
-            listOfTags: this.deck.listOfTags,
-            getCardFromKey: this.deck.getCardFromKey,
-            getListOfCards: this.deck.getListOfCards,
+            listOfTags: deck.listOfTags,
+            getCardFromKey: deck.getCardFromKey,
+            getListOfCards: deck.getListOfCards,
             appendCard,
             editCard,
             deleteCard,
-            deleteCards
+            deleteCards,
+            resetDeck
         }
     }
 
@@ -119,30 +118,32 @@ class Site extends React.Component {
                         </Menu>
 
         let modal;
+        let activeMain;
         switch (this.state.selected) {
             case "tags":
                 modal = <TransferTagsModal 
-                            listOfTags={this.deck.listOfTags}
+                            listOfTags={this.state.deck.listOfTags}
                             closeModal={this.closeModal}
-                            rebuildActive={(activeTags) => { this.deck.rebuildActive(activeTags) }}
+                            rebuildActive={(activeTags) => { this.state.deck.rebuildActive(activeTags) }}
                             changeCard={this.changeCard}
                             visible={this.state.selected === "tags"}>
                         </TransferTagsModal>
                 break;
             case "manage":
-                this.activeMain = <ManageDeckPage visible={this.state.selected === "manage"} 
+                activeMain = <ManageDeckPage visible={this.state.selected === "manage"} 
+                                    listOfCards={this.state.deck.getListOfCards()}
                                     deckOps={this.deckOps}/>
                 break;
             case "review":
-                this.activeMain = <div>
-                                    <div style={{ marginTop: "1%" }}>
-                                        <header> Flash Cards for Japanese </header>
-                                    </div>
-                                    <FlashCardApp currentCard={this.state.currentCard}
-                                        changeCard={this.changeCard}
-                                        answering={this.state.selected === "review"}>
-                                    </FlashCardApp>
+                activeMain = <div>
+                                <div style={{ marginTop: "1%" }}>
+                                    <header> Flash Cards for Japanese </header>
                                 </div>
+                                <FlashCardApp currentCard={this.state.currentCard}
+                                    changeCard={this.changeCard}
+                                    answering={this.state.selected === "review"}>
+                                </FlashCardApp>
+                            </div>
                 break;
             default:
                 break;
@@ -154,7 +155,7 @@ class Site extends React.Component {
                     <ErrorBoundary>
                     {modal}
                     <Content>
-                    {this.activeMain}
+                    {activeMain}
                     </Content>
                 </ErrorBoundary>
             </Layout>
