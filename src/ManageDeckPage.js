@@ -54,10 +54,167 @@ class EditableTable extends React.Component {
             data: this.props.dataSource,
             startingData: this.props.dataSource,
             filters: [],
-            forceFilterUpdate: false,
-            disabledFiltering: false
+            forceFilterUpdate: false
         };
 
+        this.setColumns();
+    }
+
+    /* ----- Lifecycle ----- */
+
+    shouldComponentUpdate = (nextProps, nextState) => {
+        const { searchInput, filters } = this.state;
+
+        const shared = _.intersection(filters, nextState.filters);
+        const filtersChanged = shared.length !== filters.length || shared.length !== nextState.filters.length;
+        const searchChanged = searchInput !== nextState.searchInput;
+        const noLongerCreatingNewCard = this.state.creatingNewCard === true && nextState.creatingNewCard === false;
+
+        // Don't update on filter change and search input change.
+        if (nextState.forceFilterUpdate || searchChanged || filtersChanged || noLongerCreatingNewCard) {
+
+            // Filters from what parent component passes down.
+            let newData = nextState.startingData;
+
+            // Don't filter if empty inputs though.
+            if (nextState.searchInput !== "") {
+                newData = newData.filter((flashcard) => {
+                    return flashcard.includes(nextState.searchInput) || flashcard.isNewCard;
+                });
+            }
+
+            if (nextState.filters.length !== 0) {
+                newData = newData.filter((flashcard) => {
+                    for (let tag of nextState.filters) {
+                        if (flashcard.isTagged(tag) || flashcard.isNewCard)
+                            return true;
+                    }
+                    return false;
+                });
+            }
+
+            // Rely on data change to update component.
+            this.setState({ data: newData, forceFilterUpdate: false });
+            return false;
+        }
+
+        return true;
+    }
+
+    componentWillReceiveProps = (nextProps) => {
+        //this.setState({ selectedKeys: nextProps.selectedKeys });
+
+        this.setState({ 
+            data: nextProps.dataSource, 
+            startingData: nextProps.dataSource, 
+            forceFilterUpdate: true 
+        });
+    }
+
+    /* ----- Callbacks for Table Component ----- */
+
+    handleTableChange = (pagination, filters, sorter, extra) => {
+        if (filters.tags) {
+            this.setState({ filters: filters.tags });
+        }
+        this.setState({ sortedInfo: sorter, currentPage: pagination.current });
+    }
+
+    onSelectChange = (selectedRowKeys) => {
+        this.setState({ selectedRowKeys });
+        if (this.props.onSelectChange)
+            this.props.onSelectChange(selectedRowKeys);
+    }
+
+    onSelectAll = (selected, selectedRows, changeRows) => {
+        // Need to ensure select all doesn't reset all filters
+        this.setState({ forceFilterUpdate: true });
+        if (this.props.onSelectAll)
+            this.props.onSelectAll(selected, selectedRows, changeRows);
+    }
+
+    deleteSelectedRows = () => {
+        const { selectedRowKeys } = this.state;
+        this.props.deckOps.deleteCards(selectedRowKeys);
+        message.success(`Deleted ${selectedRowKeys.length} cards!`);
+        this.setState({ selectedRowKeys: [] });
+    }
+
+    /* ----- Row Opertions ----- */
+
+    makeNewRow = () => {
+        const newCard = new FlashCard("", "");
+        // To help keep fields up top even if filters are on.
+        // Property goes away after editCard, since it create a new FlashCard.
+        newCard.isNewCard = true;
+        this.props.deckOps.appendCard(newCard);
+
+        this.setState({
+            // Resets sorting and pagination to avoid form not shown.
+            sortedInfo: null,
+            currentPage: 1,
+            // Empties selected keys to avoid selected cards deep in pagination
+            selectedRowKeys: [],
+            rowTags: [],
+            creatingNewCard: true,
+            editingKey: newCard.key
+            // Does not reset search or filters to go back to search + filters after addition of new card.
+        });
+    }
+
+    isEditing = (record) => {
+        return record.key === this.state.editingKey;
+    }
+
+    edit = (key) => {
+        // Pull existing tags for editing
+        const rowTags = this.props.deckOps.getCardFromKey(key).tags || [];
+        this.setState({ editingKey: key, rowTags });
+    }
+
+    cancel = () => {
+        if (this.state.creatingNewCard) {
+            const { editingKey } = this.state;
+            this.setState({ creatingNewCard: false });
+            this.props.deckOps.deleteCard(editingKey);
+        }
+        this.setState({ editingKey: '' });
+    }
+
+    save = (form, key) => {
+        form.validateFields((err, values) => {
+            if (err) return;
+
+            if (!values.front && !values.back) {
+                message.warning("Cannot add empty card!");
+                return;
+            }
+
+            if (!values.front) {
+                message.warning("Card needs a front!");
+                return;
+            }
+
+            if (!values.back) {
+                message.warning("Card needs a back!");
+                return;
+            }
+
+            values.tags = this.state.rowTags;
+            this.props.deckOps.editCard(key, values);
+
+            if (this.state.creatingNewCard)
+                message.success("Created card!");
+            else
+                message.success("Edited card!");
+
+            this.setState({ editingKey: '', creatingNewCard: false, rowTags: [] });
+        });
+    }
+
+    /* ----- Render Related ----- */
+
+    setColumns = () => {
         const renderHighlighter = (text) => {
             return <Highlighter 
                 highlightStyle={{ backgroundColor: '#ffc069', padding: 0 }}
@@ -156,158 +313,6 @@ class EditableTable extends React.Component {
                 }
             }
         ];
-    }
-
-    /* Lifecycle */
-
-    shouldComponentUpdate = (nextProps, nextState) => {
-        const { searchInput, filters } = this.state;
-
-        const shared = _.intersection(filters, nextState.filters);
-        const filtersChanged = shared.length !== filters.length || shared.length !== nextState.filters.length;
-        const searchChanged = searchInput !== nextState.searchInput;
-        const noLongerCreatingNewCard = this.state.creatingNewCard === true && nextState.creatingNewCard === false;
-
-        // Don't update on filter change and search input change.
-        if (!nextState.disabledFiltering && (nextState.forceFilterUpdate ||
-            searchChanged || filtersChanged || noLongerCreatingNewCard)) {
-
-            // Filters from what parent component passes down.
-            let newData = nextState.startingData;
-
-            // Don't filter if empty inputs though.
-            if (nextState.searchInput !== "") {
-                newData = newData.filter((flashcard) => flashcard.includes(nextState.searchInput));
-            }
-
-            if (nextState.filters.length !== 0) {
-                newData = newData.filter((flashcard) => {
-                    for (let tag of nextState.filters) {
-                        if (flashcard.isTagged(tag))
-                            return true;
-                    }
-                    return false;
-                });
-            }
-
-            // Rely on data change to update component.
-            this.setState({ data: newData, forceFilterUpdate: false, disabledFiltering: false });
-            return false;
-        }
-
-        return true;
-    }
-
-    componentWillReceiveProps = (nextProps) => {
-        //this.setState({ selectedKeys: nextProps.selectedKeys });
-
-        this.setState({ 
-            data: nextProps.dataSource, 
-            startingData: nextProps.dataSource, 
-            forceFilterUpdate: true 
-        });
-    }
-
-    /* Callbacks for Table Component */
-
-    handleTableChange = (pagination, filters, sorter, extra) => {
-        if (filters.tags) {
-            this.setState({ filters: filters.tags });
-        }
-        this.setState({ sortedInfo: sorter, currentPage: pagination.current });
-    }
-
-    onSelectChange = (selectedRowKeys) => {
-        this.setState({ selectedRowKeys });
-        if (this.props.onSelectChange)
-            this.props.onSelectChange(selectedRowKeys);
-    }
-
-    onSelectAll = (selected, selectedRows, changeRows) => {
-        // Need to ensure select all doesn't reset all filters
-        this.setState({ forceFilterUpdate: true });
-        if (this.props.onSelectAll)
-            this.props.onSelectAll(selected, selectedRows, changeRows);
-    }
-
-    deleteSelectedRows = () => {
-        const { selectedRowKeys } = this.state;
-        this.props.deckOps.deleteCards(selectedRowKeys);
-        message.success(`Deleted ${selectedRowKeys.length} cards!`);
-        this.setState({ selectedRowKeys: [] });
-    }
-
-    /* Row Opertions */
-
-    makeNewRow = () => {
-        const newCard = new FlashCard("", "");
-        // To help keep fields up top even if filters are on.
-        // Property goes away after editCard, since it create a new FlashCard.
-        newCard.isNewCard = true;
-        this.props.deckOps.appendCard(newCard);
-
-        this.setState({
-            // Resets sorting and pagination to avoid form not shown.
-            // Does not reset search filter to go back to search after addition of new card.
-            // But does mark filtering as disabled to show the input field for the new card
-            sortedInfo: null,
-            selectedRowKeys: [],
-            currentPage: 1,
-            rowTags: [],
-            creatingNewCard: true,
-            editingKey: newCard.key,
-            disabledFiltering: true
-        });
-    }
-
-    isEditing = (record) => {
-        return record.key === this.state.editingKey;
-    }
-
-    edit = (key) => {
-        // Pull existing tags for editing
-        const rowTags = this.props.deckOps.getCardFromKey(key).tags || [];
-        this.setState({ editingKey: key, rowTags });
-    }
-
-    cancel = () => {
-        if (this.state.creatingNewCard) {
-            const { editingKey } = this.state;
-            this.setState({ creatingNewCard: false, disabledFiltering: false });
-            this.props.deckOps.deleteCard(editingKey);
-        }
-        this.setState({ editingKey: '' });
-    }
-
-    save = (form, key) => {
-        form.validateFields((err, values) => {
-            if (err) return;
-
-            if (!values.front && !values.back) {
-                message.warning("Cannot add empty card!");
-                return;
-            }
-
-            if (!values.front) {
-                message.warning("Card needs a front!");
-                return;
-            }
-
-            if (!values.back) {
-                message.warning("Card needs a back!");
-                return;
-            }
-
-            values.tags = this.state.rowTags;
-            this.props.deckOps.editCard(key, values);
-
-            if (this.state.creatingNewCard)
-                message.success("Created card!");
-            else
-                message.success("Edited card!");
-
-            this.setState({ editingKey: '', creatingNewCard: false, rowTags: [] });
-        });
     }
 
     render() {
@@ -446,7 +451,9 @@ class ManageDeckPage extends React.Component {
     }
 
     onFilterChange = () => {
-
+        // Need to check for emptied selection? banner should be removed
+        // e.g. when creating new card, selectedKeys is emptied. 
+        // Can just check in life cycle method for any case where nextState.selectedKeys is an empty array
     }
 
     onSelectAll = (selected, selectedRows, changeRows) => {
