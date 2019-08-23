@@ -6,17 +6,16 @@ import _ from 'lodash';
 class TransferTagsModal extends React.Component {
     constructor(props) {
         super(props);
-        let savedSettings = JSON.parse(localStorage.getItem("activeTags"));
+        const savedSettings = JSON.parse(localStorage.getItem("activeTags"));
         this.tagsStatuses = { ...savedSettings };
 
         this.tagsToKeys = {};
         this.keysToTags = {};
-        let curKey = 0;
 
-        this.props.listOfTags.forEach((tag) => {
+        // Ultimately draws tags from props. Settings just to populate active/inactive
+        this.props.listOfTags.forEach((tag, curKey) => {
             this.tagsToKeys[tag] = curKey;
             this.keysToTags[curKey] = tag;
-            curKey++;
         });
         
         const keyedTags = this.props.listOfTags.map((tag) => { return {tag, key: this.tagsToKeys[tag]} });
