@@ -1,6 +1,6 @@
 import React from 'react';
 import { Form, Input, message, Popconfirm, Table, Tag } from 'antd';
-import { Card, Divider, Button, Icon, Alert } from 'antd';
+import { Card, Divider, Button, Icon } from 'antd';
 import EditableTagGroup from "./EditableTagGroup";
 import { FlashCard } from "./Deck";
 import Highlighter from 'react-highlight-words';
@@ -57,6 +57,8 @@ class EditableTable extends React.Component {
             forceFilterUpdate: false
         };
 
+        // Doesn't need to update state and rerender.
+        this.selectAllMode = "page-data";
         this.setColumns();
     }
 
@@ -122,25 +124,54 @@ class EditableTable extends React.Component {
 
     onSelectChange = (selectedRowKeys) => {
         this.setState({ selectedRowKeys });
-        if (this.props.onSelectChange)
-            this.props.onSelectChange(selectedRowKeys);
     }
 
     onSelectAll = (selected, selectedRows, changeRows) => {
-        // Need to ensure select all doesn't reset all filters
-        this.setState({ forceFilterUpdate: true });
-        if (this.props.onSelectAll)
-            this.props.onSelectAll(selected, selectedRows, changeRows);
+        // Changes keys to pass onto table depending on selectAllMode and user action.
+        const { data } = this.state;
+        message.destroy();
+        if (selected) {
+            if (this.selectAllMode === "all-data") {
+                this.setState({ selectedRowKeys: data.map((card) => card.key) });
+                message.info(`Selected ${data.length} cards across pages.`);
+            } else if (this.selectAllMode === "page-data") {
+                this.setState({ selectedRowKeys: selectedRows.map((card)=> card.key) });
+                message.info(`Selected ${selectedRows.length} cards from this page.`);
+            } else {
+                throw Error("Assertion Error: invalid state for EdtiableTable selectAllMode");
+            }
+        } else {
+            if (this.selectAllMode === "all-data") {
+                this.setState({ selectedRowKeys: [] });
+                message.info("Deselected all cards.")
+            } else if (this.selectAllMode === "page-data") {
+                // deselect only the current page, even if selected all in a previous step
+                const selectedRowKeys = selectedRows.map((card)=> card.key);
+                this.setState({ selectedRowKeys });
+                if (selectedRowKeys.length > 0) {
+                    message.info(`Deselected page. ${selectedRowKeys.length} cards still selected.`)
+                } else {
+                    message.info(`Deselected all cards.`)
+                }
+                
+            }
+        }
     }
 
+    /* ----- Row Operations ----- */
+
     deleteSelectedRows = () => {
+        /* 
+        Note: cannot remove tags with 0 cards from the list of filters,
+        because antd's Table internally keeps track of filters and won't remove
+        even if the passed columns prop changes.
+        */
         const { selectedRowKeys } = this.state;
         this.props.deckOps.deleteCards(selectedRowKeys);
+        message.destroy();
         message.success(`Deleted ${selectedRowKeys.length} cards!`);
         this.setState({ selectedRowKeys: [] });
     }
-
-    /* ----- Row Opertions ----- */
 
     makeNewRow = () => {
         const newCard = new FlashCard("", "");
@@ -184,19 +215,20 @@ class EditableTable extends React.Component {
     save = (form, key) => {
         form.validateFields((err, values) => {
             if (err) return;
+            message.destroy();
 
             if (!values.front && !values.back) {
-                message.warning("Cannot add empty card!");
+                message.error("Cannot add empty card!");
                 return;
             }
 
             if (!values.front) {
-                message.warning("Card needs a front!");
+                message.error("Card needs a front!");
                 return;
             }
 
             if (!values.back) {
-                message.warning("Card needs a back!");
+                message.error("Card needs a back!");
                 return;
             }
 
@@ -222,7 +254,7 @@ class EditableTable extends React.Component {
                 autoEscape
                 textToHighlight={text.toString()}/>
         }
-
+        this.tagsColumnIndex = 2;
         this.columns = [
             {
                 title: "Front",
@@ -246,8 +278,7 @@ class EditableTable extends React.Component {
                 title: "Tags",
                 dataIndex: "tags",
                 key: "tags",
-                filters: this.props.deckOps.listOfTags.map((tag) => { return {text: tag, value: tag} }),
-                //onFilter: (value, record) => { return record.isTagged(value) || record.isNewCard },
+                filters: this.props.deckOps.getListOfTags().map((tag) => { return {text: tag, value: tag} }),
                 render: (text, record, dataIndex) => {
                     const editable = this.isEditing(record);
 
@@ -266,7 +297,7 @@ class EditableTable extends React.Component {
                 title: "Operations",
                 dataIndex: "operations",
                 key: "operations",
-                width: "20%",
+                width: "10%",
                 render: (text, record) => {
                     const { editingKey } = this.state;
                     const editable = this.isEditing(record);
@@ -299,12 +330,6 @@ class EditableTable extends React.Component {
                                     onClick={() => { this.edit(record.key) }}>
                                     Edit
                                 </Button>
-                                <Divider type="vertical" />
-                                <Popconfirm title="Delete this card?" okType="primary" okText="Delete"
-                                    onConfirm={() => { this.props.deckOps.deleteCard(record.key); 
-                                                        message.success("Deleted card!"); }}>
-                                    <Button size="small" type="link">Delete</Button>
-                                </Popconfirm>
                             </span>
                         )
                     }
@@ -325,7 +350,7 @@ class EditableTable extends React.Component {
             const { selectedRowKeys } = this.state;
             const { dataSource } = this.props;
 
-            // reset to default deck button only appears with 0 cards
+            // Reset to default deck button only appears with 0 cards
             let deleteOrResetButton;
             if (dataSource && dataSource.length > 0) {
                 const deleteText = `Delete ${selectedRowKeys.length} Selected?`;
@@ -368,8 +393,6 @@ class EditableTable extends React.Component {
             );
         }
 
-        console.log("table rendering");
-
         let { sortedInfo, selectedRowKeys, data } = this.state;
 
         const components = { body: { cell: EditableCell } };
@@ -377,7 +400,28 @@ class EditableTable extends React.Component {
         const rowSelection = { 
             selectedRowKeys, 
             onChange: this.onSelectChange,
-            onSelectAll: this.onSelectAll
+            onSelectAll: this.onSelectAll,
+            hideDefaultSelections: true,
+            selections: [
+                {
+                    key: 'all-data',
+                    text: 'Select-All Mode',
+                    onSelect: () => {
+                        message.destroy();
+                        message.info("Select All Mode Enabled");
+                        this.selectAllMode = "all-data";
+                    }
+                },
+                {
+                    key: 'page-data',
+                    text: 'Select-Page Mode',
+                    onSelect: () => {
+                        message.destroy();
+                        message.info("Select Page Mode Enabled");
+                        this.selectAllMode = "page-data";
+                    }
+                }
+            ]
         };
 
         const columns = this.columns.map((col) => {
@@ -416,8 +460,7 @@ const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableT
 class ManageDeckPage extends React.Component {
     // Data lives here to refresh table component upon change
     state = {
-        listOfCards: this.props.listOfCards,
-        selectionBannerState: "off"
+        listOfCards: this.props.listOfCards
     };
 
     componentWillReceiveProps(nextProps) {
@@ -450,69 +493,10 @@ class ManageDeckPage extends React.Component {
         }
     }
 
-    onFilterChange = () => {
-        // Need to check for emptied selection? banner should be removed
-        // e.g. when creating new card, selectedKeys is emptied. 
-        // Can just check in life cycle method for any case where nextState.selectedKeys is an empty array
-    }
-
-    onSelectAll = (selected, selectedRows, changeRows) => {
-        if (selected) {
-            this.changeBannerState("page");
-        } else {
-            this.changeBannerState("off");
-        }
-        if (selectedRows)
-            this.numSelectedRows = selectedRows.length;
-    }
-
-    changeBannerState = (selectionBannerState) => {
-        this.setState({ selectionBannerState });
-    }
-
     render() {
-        const { selectionBannerState } = this.state;
-        const message = `All ${this.numSelectedRows} cards on this page are selected`;
-        // Two needed to avoid second banner prematurely closing. Undefined won't show.
-        let selectionBannerPage;
-        let selectionBannerAll;
-        let closeText;
-        switch (selectionBannerState) {
-            case "page":
-                closeText = `Select all ___ cards`; // Need to grab a list of keys
-                selectionBannerPage = (
-                    <Alert style={{ margin: "2% 5% 2% 5%" }} 
-                        message={message} 
-                        type="info"
-                        closeText={closeText}
-                        onClose={() => { this.changeBannerState("all") }} // Also need to actually select all
-                        showIcon>
-                    </Alert>
-                );
-                break;
-            case "all":
-                closeText = "Clear Selection";
-                selectionBannerAll = (
-                    <Alert style={{ margin: "2% 5% 2% 5%" }} 
-                        message={message} 
-                        type="info"
-                        closeText={closeText}
-                        onClose={() => { this.changeBannerState("off") }} // Also needs to actually clear selection
-                        showIcon>
-                    </Alert>
-                );
-                break;
-            case "off":
-                break;
-            default:
-                throw Error("Assertion failed: selectionBannerState invalid state");
-        }
-
         return (
             <ErrorBoundary>
-                {selectionBannerPage}
-                {selectionBannerAll}
-                <Card style={{margin: "2% 5% 2% 5%"}}>
+                <Card style={{margin: "1.5% 5% 2% 5%"}}>
                     <EditableFormTable dataSource={this.state.listOfCards} 
                         deckOps={this.deckOps}
                         onSelectAll={this.onSelectAll}
