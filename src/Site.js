@@ -69,26 +69,29 @@ class Site extends React.Component {
 
     get deckOps() {
         const { deck } = this.state;
-        const reportAndSaveChanges = (func) => {
+        const defaultDeck = buildDefaultDeck();
+        const reportAndSaveChanges = (func, toSaveDeck) => {
             return (...args) => {
                 func(...args);
                 this.manageDeckChanged = true;
-                localStorage.setItem("savedDeck", JSON.stringify(deck));
+                localStorage.setItem("savedDeck", JSON.stringify(toSaveDeck));
             }
         }
 
-        const appendCard = reportAndSaveChanges(deck.appendCard);
-        const editCard = reportAndSaveChanges(deck.editCard);
-        const deleteCard = reportAndSaveChanges(deck.deleteCard);
+        const appendCard = reportAndSaveChanges(deck.appendCard, deck);
+        const editCard = reportAndSaveChanges(deck.editCard, deck);
+        const deleteCard = reportAndSaveChanges(deck.deleteCard, deck);
         const deleteCards = reportAndSaveChanges((keys) => { 
             keys.forEach((key) => deck.deleteCard(key));
-        });
+        }, deck);
         const resetDeck = reportAndSaveChanges(() => { 
-            this.setState({ deck: buildDefaultDeck() });
-        });
+            this.setState({ deck: defaultDeck });
+            message.destroy();
+            message.success("Reset to default deck.");
+        }, defaultDeck);
 
         return {
-            listOfTags: deck.listOfTags,
+            getListOfTags: deck.getListOfTags,
             getCardFromKey: deck.getCardFromKey,
             getListOfCards: deck.getListOfCards,
             appendCard,
@@ -122,7 +125,7 @@ class Site extends React.Component {
         switch (this.state.selected) {
             case "tags":
                 modal = <TransferTagsModal 
-                            listOfTags={this.state.deck.listOfTags}
+                            listOfTags={this.state.deck.getListOfTags()}
                             closeModal={this.closeModal}
                             rebuildActive={(activeTags) => { this.state.deck.rebuildActive(activeTags) }}
                             changeCard={this.changeCard}
