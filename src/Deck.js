@@ -36,6 +36,7 @@ export class Deck {
         this.deleteCard = this.deleteCard.bind(this);
         this.editCard = this.editCard.bind(this);
         this.getListOfCards = this.getListOfCards.bind(this);
+        this.getListOfTags = this.getListOfTags.bind(this);
         this.getCardFromKey = this.getCardFromKey.bind(this);
 
         this.cards = {};
@@ -45,7 +46,7 @@ export class Deck {
         this.tagCounts = {};
     }
 
-    get listOfTags() {
+    getListOfTags() {
         return Object.keys(this.tagCounts).reverse();
     }
 
@@ -167,7 +168,7 @@ export class Deck {
     }
 }
 
-export function buildDefaultDeck(activeTags) {
+export function buildDefaultDeck() {
     function zipAndAppendToDeck(characters, phonetics, tag, deck) {
         let zipped = characters.map((char, i) => new FlashCard(char, phonetics[i], [tag]));
         // Reverse for regular order display in table.
@@ -319,6 +320,6 @@ export function buildDefaultDeck(activeTags) {
     zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, "voiced hiragana", defaultDeck);
     zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, "basic hiragana", defaultDeck);
 
-    defaultDeck.rebuildActive(activeTags);
+    defaultDeck.rebuildActive(["basic hiragana"]);
     return defaultDeck;
 }
