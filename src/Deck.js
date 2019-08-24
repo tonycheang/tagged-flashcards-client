@@ -2,9 +2,10 @@ import React from 'react';
 import { Empty } from 'antd';
 export class FlashCard {
     // Can expand to approximate matching later if desired
-    constructor(front, back, tags, key) {
+    constructor(front, back, prompt, tags, key) {
         this.front = front;
         this.back = back;
+        this.prompt = prompt || "";
         this.tags = tags || [];
         this.key = key;
     }
@@ -26,7 +27,9 @@ export class FlashCard {
     }
 
     includes(substring) {
-        return this.front.toLowerCase().includes(substring) || this.back.toLowerCase().includes(substring);
+        return this.front.toLowerCase().includes(substring.toLowerCase()) ||
+            this.back.toLowerCase().includes(substring.toLowerCase()) ||
+            this.prompt.toLowerCase().includes(substring.toLowerCase());
     }
 }
 
@@ -80,7 +83,7 @@ export class Deck {
         values.tags.forEach((tag) => { this.tagCounts.hasOwnProperty(tag) ? this.tagCounts[tag] += 1 : this.tagCounts[tag] = 1 });
         this.cleanEmptyTags(key);
         
-        this.cards[key] = new FlashCard(values.front, values.back, values.tags, key);
+        this.cards[key] = new FlashCard(values.front, values.back, values.prompt, values.tags, key);
     }
 
     cleanEmptyTags(key) {
@@ -145,22 +148,22 @@ export class Deck {
         // Ensures objects get converted to FlashCard objects.
         if (newDeck.cards) {
             Object.entries(newDeck.cards).forEach(([key, obj]) => {
-                const { front, back, tags } = obj;
-                newDeck.cards[key] = new FlashCard(front, back, tags, key);
+                const { front, back, prompt, tags } = obj;
+                newDeck.cards[key] = new FlashCard(front, back, prompt, tags, key);
             });
         }
 
         if (newDeck.uniqueCycleOfCards) {
             newDeck.uniqueCycleOfCards = newDeck.uniqueCycleOfCards.map((obj, i) => {
-                const { front, back, tags, key } = obj;
-                return new FlashCard(front, back, tags, key);
+                const { front, back, prompt, tags, key } = obj;
+                return new FlashCard(front, back, prompt, tags, key);
             });
         }
 
         if (newDeck.active) {
             newDeck.active = newDeck.active.map((obj, i) => {
-                const { front, back, tags, key } = obj;
-                return new FlashCard(front, back, tags, key);
+                const { front, back, prompt, tags, key } = obj;
+                return new FlashCard(front, back, prompt, tags, key);
             });
         }
 
@@ -169,8 +172,8 @@ export class Deck {
 }
 
 export function buildDefaultDeck() {
-    function zipAndAppendToDeck(characters, phonetics, tag, deck) {
-        let zipped = characters.map((char, i) => new FlashCard(char, phonetics[i], [tag]));
+    function zipAndAppendToDeck(characters, phonetics, tags, deck) {
+        let zipped = characters.map((char, i) => new FlashCard(char, phonetics[i], "phonetic", tags));
         // Reverse for regular order display in table.
         zipped.reverse().forEach((card) => deck.appendCard(card));
     }
@@ -312,13 +315,13 @@ export function buildDefaultDeck() {
         "ティ", "ディ", "デュ", "トゥ"
     ];
 
-    zipAndAppendToDeck(katakanaForeign, katakanaForeignPhonetic, "foreign katakana", defaultDeck);
-    zipAndAppendToDeck(katakanaYoOn, katakanaYoOnPhonetic, "contracted katakana", defaultDeck);
-    zipAndAppendToDeck(katakanaDakuOn, katakanaDakuOnPhonetic, "voiced katakana", defaultDeck);
-    zipAndAppendToDeck(katakanaSeiOn, katakanaSeiOnPhonetic, "basic katakana", defaultDeck);
-    zipAndAppendToDeck(hiraganaYoOn, hiraganaYoOnPhoenetic, "contracted hiragana", defaultDeck);
-    zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, "voiced hiragana", defaultDeck);
-    zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, "basic hiragana", defaultDeck);
+    zipAndAppendToDeck(katakanaForeign, katakanaForeignPhonetic, ["foreign katakana"], defaultDeck);
+    zipAndAppendToDeck(katakanaYoOn, katakanaYoOnPhonetic, ["contracted katakana"], defaultDeck);
+    zipAndAppendToDeck(katakanaDakuOn, katakanaDakuOnPhonetic, ["voiced katakana"], defaultDeck);
+    zipAndAppendToDeck(katakanaSeiOn, katakanaSeiOnPhonetic, ["basic katakana"], defaultDeck);
+    zipAndAppendToDeck(hiraganaYoOn, hiraganaYoOnPhoenetic, ["contracted hiragana"], defaultDeck);
+    zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, ["voiced hiragana"], defaultDeck);
+    zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, ["basic hiragana"], defaultDeck);
 
     defaultDeck.rebuildActive(["basic hiragana"]);
     return defaultDeck;

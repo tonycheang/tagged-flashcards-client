@@ -260,7 +260,7 @@ class EditableTable extends React.Component {
                 title: "Front",
                 dataIndex: "front",
                 key: "front",
-                width: "15%",
+                width: "10%",
                 editable: true,
                 sorter: (a, b) => a.front.localeCompare(b.front),
                 render: renderHighlighter
@@ -269,9 +269,17 @@ class EditableTable extends React.Component {
                 title: "Back",
                 dataIndex: "back",
                 key: "back",
-                width: "15%",
+                width: "10%",
                 editable: true,
                 sorter: (a, b) => a.back.localeCompare(b.back),
+                render: renderHighlighter
+            },
+            {
+                title: "Prompt",
+                dataIndex: "prompt",
+                key: "prompt",
+                width: "10%",
+                editable: true,
                 render: renderHighlighter
             },
             {

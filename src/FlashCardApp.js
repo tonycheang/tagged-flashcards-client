@@ -120,7 +120,7 @@ class FlashCardApp extends React.Component {
   render() {
     let card = this.props.currentCard;
 
-    let defaultText = this.state.firstTimeTyping ? "type the phonetic translation" : "";
+    let defaultText = this.state.firstTimeTyping ? "answer here" : "";
 
     let displayButton;
     if (this.state.justRevealed)
@@ -134,6 +134,9 @@ class FlashCardApp extends React.Component {
       <ErrorBoundary>
         <div align="center">
           <Card className="Card" style={{ backgroundColor: this.state.backgroundColor }}>
+            <div style={{ fontSize: 20, margin: ".5%", color: "#bfbfbf" }}>
+              {card.prompt}
+            </div>
             <div style={{ fontSize: 70, margin: "2%" }}>
               {card.front}
             </div>
