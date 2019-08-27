@@ -20,7 +20,7 @@ export class FlashCard {
         return input === this.back;
     }
 
-    startsWith(input) {
+    answerStartsWith(input) {
         return input === this.back.slice(0, input.length);
     }
 

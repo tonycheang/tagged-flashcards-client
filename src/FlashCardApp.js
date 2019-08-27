@@ -94,7 +94,7 @@ class FlashCardApp extends React.Component {
 
     // Don't report if the first few characters are correct
     if (typed.length < answer.length) {
-      if (currentCard.startsWith(typed))
+      if (currentCard.answerStartsWith(typed))
         return;
     }
 
