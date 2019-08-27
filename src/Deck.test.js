@@ -100,7 +100,7 @@ describe("decks can", () => {
         expect(deckCards.length).toBe(0);
     });
 
-    it("modifies cards", () => {
+    it("edit cards", () => {
         const deck = buildDefaultDeck();
         const cards = [
             new FlashCard("foo", "bar", "", ["baz"]),
@@ -160,50 +160,103 @@ describe("decks can", () => {
 
 //--FlashCard--//
 
-// check card.includes
-// check answerStartsWith
-// check isTagged
+describe("flashcards", ()=> {
+
+    it("report if a substring is present in the front field", () => {
+        const card = new FlashCard("thishassubstringhere", "backdoesnot", "promptdoesnteither", ["baz"]);
+        expect(card.includes("substring")).toBe(true);
+        expect(card.includes("notincluded")).toBe(false);
+    });
+
+    it("report if a substring is present in the back field", () => {
+        const card = new FlashCard("frontdoesnot", "thishassubstringhere", "promptdoesnteither", ["baz"]);
+        expect(card.includes("substring")).toBe(true);
+        expect(card.includes("alsonotincluded")).toBe(false);
+    });
+
+    it("report if a substring is present in the prompt field", () => {
+        const card = new FlashCard("frontdoesnot", "backdoesnteither", "thishassubstringhere", ["baz"]);
+        expect(card.includes("substring")).toBe(true);
+        expect(card.includes("baz")).toBe(false);
+    });
+
+    it("do not report if a substring is present in the tags", () => {
+        const card = new FlashCard("foo", "bar", "baz", ["fizz", "substring", "buzz"]);
+        expect(card.includes("substring")).toBe(false);
+        expect(card.includes("fizz")).toBe(false);
+        expect(card.includes("buzz")).toBe(false);
+    });
+
+    it("report the presence of tags", () => {
+        const card = new FlashCard("foo", "bar", "baz", ["fizz", "substring", "buzz"]);
+        expect(card.isTagged("substring")).toBe(true);
+        expect(card.isTagged("fizz")).toBe(true);
+        expect(card.isTagged("buzz")).toBe(true);
+    });
+
+    it("do not report the presence of nonexistant tags", () => {
+        const card = new FlashCard("foo", "bar", "baz", ["fizz", "substring", "buzz"]);
+        expect(card.isTagged("bam")).toBe(false);
+        expect(card.isTagged("boo")).toBe(false);
+    });
+
+    it("report the back field starts with a given substring", () => {
+        const card = new FlashCard("foo", "barbambooz", "baz", ["fizz", "substring", "buzz"]);
+        expect(card.answerStartsWith("barba")).toBe(true);
+    });
+
+    it("do not report back field starts with erroneous substrings", () => {
+        const card = new FlashCard("foo", "barbambooz", "baz", ["fizz", "substring", "buzz"]);
+        expect(card.answerStartsWith("barham")).toBe(false);
+        expect(card.answerStartsWith("bamba")).toBe(false);
+    });
+
+});
 
 
 /* -----"Private" Methods----- */
 
 //--Deck--//
 
-it("builds a cycle that only contains cards from the active pile", () => {
-    const deck = buildDefaultDeck();
-    deck.rebuildActive(["basic", "hiragana"]);
-    const originalCards = deck.getListOfActiveCards();
+describe("decks internally", () => {
 
-    // To avoid directly reading deck, in case implementation changes
-    const uniqueCycleOfCards = [];
-    for (let i = 0; i < originalCards.length; i++) {
-        uniqueCycleOfCards.push(deck.getNextCard());
-    }
+    it("builds a cycle that only contains cards from the active pile", () => {
+        const deck = buildDefaultDeck();
+        deck.rebuildActive(["basic", "hiragana"]);
+        const originalCards = deck.getListOfActiveCards();
 
-    expect(uniqueCycleOfCards).toEqual(expect.arrayContaining(originalCards));
+        // To avoid directly reading deck, in case implementation changes
+        const uniqueCycleOfCards = [];
+        for (let i = 0; i < originalCards.length; i++) {
+            uniqueCycleOfCards.push(deck.getNextCard());
+        }
+
+        expect(uniqueCycleOfCards).toEqual(expect.arrayContaining(originalCards));
+    });
+
+    it("rebuilds a cycle when the current one runs out", () => {
+        const deck = buildDefaultDeck();
+        deck.rebuildActive(["basic", "hiragana"]);
+        const buildUniqueCycleSpy = jest.spyOn(deck, "_buildUniqueCycle");
+        const numCards = deck.getListOfActiveCards().length;
+
+        // After the last card has been exhausted...
+        for (let i = 0; i < numCards + 1; i++) {
+            deck.getNextCard();
+        }
+
+        expect(buildUniqueCycleSpy).toHaveBeenCalled();
+    });
+
+    it("removes keys that do not have cards", () => {
+        const deck = buildDefaultDeck();
+        const tagToRemove = "hiragana";
+        const cardsTaggedWithToRemove = deck.getListOfCards().filter((card) => { return card.isTagged(tagToRemove) })
+        cardsTaggedWithToRemove.forEach((card) => { deck.deleteCard(card.key) });
+        const listOfTagsAfterRemoval = deck.getListOfTags();
+
+        expect(listOfTagsAfterRemoval).not.toContain(tagToRemove);
+        expect(listOfTagsAfterRemoval).toContain("katakana");
+    });
+
 });
-
-it("rebuilds a cycle when the current one runs out", () => {
-    const deck = buildDefaultDeck();
-    deck.rebuildActive(["basic", "hiragana"]);
-    const buildUniqueCycleSpy = jest.spyOn(deck, "_buildUniqueCycle");
-    const numCards = deck.getListOfActiveCards().length;
-
-    // After the last card has been exhausted...
-    for (let i = 0; i < numCards + 1; i++) {
-        deck.getNextCard();
-    }
-
-    expect(buildUniqueCycleSpy).toHaveBeenCalled();
-});
-
-it("removes keys that do not have cards", () => {
-    const deck = buildDefaultDeck();
-    const tagToRemove = "hiragana";
-    const cardsTaggedWithToRemove = deck.getListOfCards().filter((card) => { return card.isTagged(tagToRemove) })
-    cardsTaggedWithToRemove.forEach((card) => { deck.deleteCard(card.key) });
-    const listOfTagsAfterRemoval = deck.getListOfTags();
-
-    expect(listOfTagsAfterRemoval).not.toContain(tagToRemove);
-});
-
