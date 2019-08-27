@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Card, Input } from 'antd';
+import { Button, Card, Input, Empty } from 'antd';
 import ErrorBoundary from './ErrorBoundary';
 import './FlashCardApp.css';
 
@@ -119,6 +119,9 @@ class FlashCardApp extends React.Component {
 
   render() {
     let card = this.props.currentCard;
+    if (!card) {
+      card = {prompt: <Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />}
+    }
 
     let defaultText = this.state.firstTimeTyping ? "answer here" : "";
 
