@@ -1,5 +1,3 @@
-import React from 'react';
-import { Empty } from 'antd';
 export class FlashCard {
     // Can expand to approximate matching later if desired
     constructor(front, back, prompt, tags, key) {
@@ -59,6 +57,10 @@ export class Deck {
         return Object.values(this.cards).reverse();
     }
 
+    getListOfActiveCards() {
+        return this.active.slice();
+    }
+
     getCardFromKey(key) {
         return this.cards[key];
     }
@@ -74,19 +76,20 @@ export class Deck {
 
     deleteCard(key) {
         this.cards[key].tags.forEach((tag) => { this.tagCounts[tag] -= 1 });
-        this.cleanEmptyTags(key);
+        this._cleanEmptyTags(key);
         delete this.cards[key];
+        // Rebuild Active is responsibility of Site to avoid rebuilding active every operation
     }
 
     editCard(key, values) {
         this.cards[key].tags.forEach((tag) => { this.tagCounts[tag] -= 1 });
         values.tags.forEach((tag) => { this.tagCounts.hasOwnProperty(tag) ? this.tagCounts[tag] += 1 : this.tagCounts[tag] = 1 });
-        this.cleanEmptyTags(key);
+        this._cleanEmptyTags(key);
         
         this.cards[key] = new FlashCard(values.front, values.back, values.prompt, values.tags, key);
     }
 
-    cleanEmptyTags(key) {
+    _cleanEmptyTags(key) {
         this.cards[key].tags.forEach((tag) => {
             if (this.tagCounts[tag] === 0)
                 delete this.tagCounts[tag];
@@ -109,14 +112,14 @@ export class Deck {
                 }
             }
         }
-        this.buildUniqueCycle();
+        this._buildUniqueCycle();
     }
 
-    buildUniqueCycle() {
+    _buildUniqueCycle() {
         // Shallow copy OK since tags do not matter.
         this.uniqueCycleOfCards = this.active.slice();
         // Fisher-Yate's or Durstenfeld shuffle
-        for (let i = this.active.length - 1; i > 0 ;i--) {
+        for (let i = this.active.length - 1; i > 0; i--) {
             let nextPicked = Math.floor(Math.random()*(i+1));
             // Swap into already-chosen region.
             [this.uniqueCycleOfCards[nextPicked], this.uniqueCycleOfCards[i]] = 
@@ -126,11 +129,11 @@ export class Deck {
 
     getNextCard() {
         if (this.active.length === 0) {
-            return new FlashCard(<Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />);
+            return void 0;
         }
         
-        if (this.uniqueCycleOfCards.length <= 0){
-            this.buildUniqueCycle();
+        if (this.uniqueCycleOfCards.length <= 0) {
+            this._buildUniqueCycle();
         }
 
         // Can add SRS system here with heap later
@@ -147,23 +150,25 @@ export class Deck {
 
         // Ensures objects get converted to FlashCard objects.
         if (newDeck.cards) {
+            const newCardsObj = {};
             Object.entries(newDeck.cards).forEach(([key, obj]) => {
                 const { front, back, prompt, tags } = obj;
-                newDeck.cards[key] = new FlashCard(front, back, prompt, tags, key);
+                newCardsObj[Number(key)] = new FlashCard(front, back, prompt, tags, Number(key));
             });
+            newDeck.cards = newCardsObj;
         }
 
         if (newDeck.uniqueCycleOfCards) {
             newDeck.uniqueCycleOfCards = newDeck.uniqueCycleOfCards.map((obj, i) => {
                 const { front, back, prompt, tags, key } = obj;
-                return new FlashCard(front, back, prompt, tags, key);
+                return new FlashCard(front, back, prompt, tags, Number(key));
             });
         }
 
         if (newDeck.active) {
             newDeck.active = newDeck.active.map((obj, i) => {
                 const { front, back, prompt, tags, key } = obj;
-                return new FlashCard(front, back, prompt, tags, key);
+                return new FlashCard(front, back, prompt, tags, Number(key));
             });
         }
 
@@ -318,10 +323,10 @@ export function buildDefaultDeck() {
     zipAndAppendToDeck(katakanaForeign, katakanaForeignPhonetic, ["foreign katakana"], defaultDeck);
     zipAndAppendToDeck(katakanaYoOn, katakanaYoOnPhonetic, ["contracted katakana"], defaultDeck);
     zipAndAppendToDeck(katakanaDakuOn, katakanaDakuOnPhonetic, ["voiced katakana"], defaultDeck);
-    zipAndAppendToDeck(katakanaSeiOn, katakanaSeiOnPhonetic, ["basic katakana"], defaultDeck);
+    zipAndAppendToDeck(katakanaSeiOn, katakanaSeiOnPhonetic, ["basic katakana", "basic", "katakana", "kana"], defaultDeck);
     zipAndAppendToDeck(hiraganaYoOn, hiraganaYoOnPhoenetic, ["contracted hiragana"], defaultDeck);
     zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, ["voiced hiragana"], defaultDeck);
-    zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, ["basic hiragana"], defaultDeck);
+    zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, ["basic hiragana", "basic", "hiragana", "kana"], defaultDeck);
 
     defaultDeck.rebuildActive(["basic hiragana"]);
     return defaultDeck;
