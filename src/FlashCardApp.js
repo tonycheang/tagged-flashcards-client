@@ -26,7 +26,8 @@ class FlashCardApp extends React.Component {
       textColor: "#000000",
       backgroundColor: this.defaultBackgroundColor,
       border: "1px solid",
-      firstTimeTyping: true
+      firstTimeTyping: true,
+      justRevealed: false
     }
   }
 
@@ -60,7 +61,7 @@ class FlashCardApp extends React.Component {
       }
       // should test for other allowable keys here (sentences have punctuation)
     } else if (isCharacter.test(event.key)) {
-      this.setState((state) => state.typed += event.key)
+      this.setState((state) => { return {typed: state.typed + event.key} });
     } else {
       // Do not extend timer for input or report correctness
       return;
@@ -110,10 +111,10 @@ class FlashCardApp extends React.Component {
   resetInput(delay, nextCard) {
     /* Used to create partial functions via method.bind() for callback */
     if (nextCard) {
-      this.setState({ typed: "" })
+      this.setState({ typed: "" });
       this.props.changeCard();
     }
-    setTimeout(() => this.setState({ backgroundColor: this.defaultBackgroundColor, border: "1px solid" }), delay)
+    setTimeout(() => this.setState({ backgroundColor: this.defaultBackgroundColor, border: "1px solid" }), delay);
     this.setState({ typed: "", typingTimer: null, justRevealed: false });
   }
 
