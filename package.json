@@ -4,6 +4,7 @@
   "homepage": "http://tonycheang.github.io/japanese-flash-cards",
   "private": true,
   "dependencies": {
+    "@types/jest": "^24.0.18",
     "antd": "^3.19.7",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
