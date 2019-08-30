@@ -38,12 +38,21 @@ class Site extends React.Component {
         // Since we do not serialize deck into savedDeck in TagsModal, we need to pull settings and rebuild.
         deck.rebuildActive(startingActive);
 
+        // Enum helps with iterating through testing
+        this.menuKeys = Object.freeze({
+            review: "review",
+            manage: "manage",
+            stats: "stats",
+            login: "login",
+            tags: "tags", 
+        });
+
         this.state = {
             deck,
             currentCard: deck.getNextCard(),
             menuOpen: false,
-            prevSelected: "review",
-            selected: "review"
+            prevSelected: this.menuKeys.review,
+            selected: this.menuKeys.review
         };
         this.manageDeckChanged = false;
     }
@@ -60,7 +69,7 @@ class Site extends React.Component {
             this.manageDeckChanged = false;
         }
 
-        this.setState({ selected: event.key, prevSelected: this.state.selected })
+        this.setState({ selected: event.key, prevSelected: this.state.selected });
     }
 
     changeCard() {
@@ -103,48 +112,49 @@ class Site extends React.Component {
     }
 
     render() {
+        const menuKeys = this.menuKeys;
         const navBar = <Menu mode="horizontal" style={{ height: "5%" }}
                             onClick={this.selectMenuItem}
                             selectedKeys={[this.state.selected]}>
-                            <Menu.Item key="review"><Icon type="home"></Icon>Review</Menu.Item>
-                            <Menu.Item key="manage"><Icon type="edit"></Icon>Manage Deck</Menu.Item>
-                            <Menu.Item key="stats" disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
+                            <Menu.Item id={menuKeys.review} key={menuKeys.review}><Icon type="home"></Icon>Review</Menu.Item>
+                            <Menu.Item id={menuKeys.manage} key={menuKeys.manage}><Icon type="edit"></Icon>Manage Deck</Menu.Item>
+                            <Menu.Item id={menuKeys.stats} key={menuKeys.stats} disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
                             
-                            <Menu.Item key="login" style={ {float: "right"} } disabled>
+                            <Menu.Item id={menuKeys.login} key={menuKeys.login} style={ {float: "right"} } disabled>
                                 <Icon type="login"></Icon>
                                 Log In
                             </Menu.Item>
-                            <Menu.Item key="tags" style={ {float: "right"} }>
+                            <Menu.Item id={menuKeys.tags} key={menuKeys.tags} style={ {float: "right"} }>
                                 <Icon type="setting"></Icon>
                                 Active Tags
                             </Menu.Item>
                         </Menu>
 
         let modal;
-        let activeMain;
         switch (this.state.selected) {
-            case "tags":
+            case menuKeys.tags:
                 modal = <TransferTagsModal 
                             listOfTags={this.state.deck.getListOfTags()}
                             closeModal={this.closeModal}
                             rebuildActive={(activeTags) => { this.state.deck.rebuildActive(activeTags) }}
                             changeCard={this.changeCard}
-                            visible={this.state.selected === "tags"}>
+                            visible={this.state.selected === menuKeys.tags}>
                         </TransferTagsModal>
                 break;
-            case "manage":
-                activeMain = <ManageDeckPage visible={this.state.selected === "manage"} 
+            case menuKeys.manage:
+                // Use this.activeMain so the modal persists over the active page.
+                this.activeMain = <ManageDeckPage visible={this.state.selected === menuKeys.manage} 
                                     listOfCards={this.state.deck.getListOfCards()}
                                     deckOps={this.deckOps}/>
                 break;
-            case "review":
-                activeMain = <div>
+            case menuKeys.review:
+                this.activeMain = <div>
                                 <div style={{ marginTop: "1%" }}>
                                     <header> Flash Cards for Japanese </header>
                                 </div>
                                 <FlashCardApp currentCard={this.state.currentCard}
                                     changeCard={this.changeCard}
-                                    answering={this.state.selected === "review"}>
+                                    answering={this.state.selected === menuKeys.review}>
                                 </FlashCardApp>
                             </div>
                 break;
@@ -158,7 +168,7 @@ class Site extends React.Component {
                     <ErrorBoundary>
                     {modal}
                     <Content>
-                    {activeMain}
+                    {this.activeMain}
                     </Content>
                 </ErrorBoundary>
             </Layout>
