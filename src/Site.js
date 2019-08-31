@@ -36,7 +36,7 @@ class Site extends React.Component {
         const savedDeckJSON = localStorage.getItem("savedDeck");
         const deck = savedDeckJSON ? Deck.buildFromJSON(savedDeckJSON) : buildDefaultDeck();
         // Since we do not serialize deck into savedDeck in TagsModal, we need to pull settings and rebuild.
-        deck.rebuildActive(startingActive);
+        if (savedDeckJSON) deck.rebuildActive(startingActive);
 
         // Enum helps with iterating through testing
         this.menuKeys = Object.freeze({
@@ -63,7 +63,7 @@ class Site extends React.Component {
 
     selectMenuItem(event) {
         // Navigation away from ManageDeckPage should rebuild the deck to accomodate changes.
-        if (this.state.selected === "manage" && this.manageDeckChanged) {
+        if (this.state.selected === this.menuKeys.manage && this.manageDeckChanged) {
             this.state.deck.rebuildActive();
             this.setState({ currentCard: this.state.deck.getNextCard() });
             this.manageDeckChanged = false;
@@ -78,7 +78,6 @@ class Site extends React.Component {
 
     get deckOps() {
         const { deck } = this.state;
-        const defaultDeck = buildDefaultDeck();
         const reportAndSaveChanges = (func, toSaveDeck) => {
             return (...args) => {
                 func(...args);
@@ -93,11 +92,16 @@ class Site extends React.Component {
         const deleteCards = reportAndSaveChanges((keys) => { 
             keys.forEach((key) => deck.deleteCard(key));
         }, deck);
-        const resetDeck = reportAndSaveChanges(() => { 
-            this.setState({ deck: defaultDeck });
+        const resetDeck = () => {
+            // Not using HoF above since building a default deck rebuilds active anyway.
+            // Better for testing.
+            const defaultDeck = buildDefaultDeck();
+            this.setState({ deck: defaultDeck, currentCard: defaultDeck.getNextCard() });
             message.destroy();
             message.success("Reset to default deck.");
-        }, defaultDeck);
+            localStorage.setItem("activeTags", JSON.stringify({ "basic hiragana": true }));
+            localStorage.setItem("savedDeck", JSON.stringify(defaultDeck));
+        };
 
         return {
             getListOfTags: deck.getListOfTags,
