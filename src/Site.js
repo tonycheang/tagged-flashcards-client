@@ -52,9 +52,9 @@ class Site extends React.Component {
             currentCard: deck.getNextCard(),
             menuOpen: false,
             prevSelected: this.menuKeys.review,
-            selected: this.menuKeys.review
+            selected: this.menuKeys.review,
+            manageDeckChanged: false
         };
-        this.manageDeckChanged = false;
     }
 
     closeModal() {
@@ -63,10 +63,9 @@ class Site extends React.Component {
 
     selectMenuItem(event) {
         // Navigation away from ManageDeckPage should rebuild the deck to accomodate changes.
-        if (this.state.selected === this.menuKeys.manage && this.manageDeckChanged) {
+        if (this.state.selected === this.menuKeys.manage && this.state.manageDeckChanged) {
             this.state.deck.rebuildActive();
-            this.setState({ currentCard: this.state.deck.getNextCard() });
-            this.manageDeckChanged = false;
+            this.setState({ currentCard: this.state.deck.getNextCard(), manageDeckChanged: false });
         }
 
         this.setState({ selected: event.key, prevSelected: this.state.selected });
@@ -81,7 +80,7 @@ class Site extends React.Component {
         const reportAndSaveChanges = (func, toSaveDeck) => {
             return (...args) => {
                 func(...args);
-                this.manageDeckChanged = true;
+                this.setState({ manageDeckChanged: true });
                 localStorage.setItem("savedDeck", JSON.stringify(toSaveDeck));
             }
         }
@@ -147,8 +146,8 @@ class Site extends React.Component {
                 break;
             case menuKeys.manage:
                 // Use this.activeMain so the modal persists over the active page.
-                this.activeMain = <ManageDeckPage visible={this.state.selected === menuKeys.manage} 
-                                    listOfCards={this.state.deck.getListOfCards()}
+                this.activeMain = <ManageDeckPage visible={this.state.selected === menuKeys.manage}
+                                    listOfCards={ this.state.deck.getListOfCards() }
                                     deckOps={this.deckOps}/>
                 break;
             case menuKeys.review:
