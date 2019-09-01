@@ -53,8 +53,7 @@ class EditableTable extends React.Component {
             sortedInfo: null,
             data: this.props.dataSource,
             startingData: this.props.dataSource,
-            filters: [],
-            forceFilterUpdate: false
+            filters: []
         };
 
         // Doesn't need to update state and rerender.
@@ -73,8 +72,7 @@ class EditableTable extends React.Component {
         const noLongerCreatingNewCard = this.state.creatingNewCard === true && nextState.creatingNewCard === false;
 
         // Don't update on filter change and search input change.
-        if (nextState.forceFilterUpdate || searchChanged || filtersChanged || noLongerCreatingNewCard) {
-
+        if (nextProps.deckChanged || searchChanged || filtersChanged || noLongerCreatingNewCard) {
             // Filters from what parent component passes down.
             let newData = nextState.startingData;
 
@@ -94,23 +92,17 @@ class EditableTable extends React.Component {
                     return false;
                 });
             }
-
             // Rely on data change to update component.
-            this.setState({ data: newData, forceFilterUpdate: false });
+            this.setState({ data: newData });
+            this.props.reportDealtWithChange();
             return false;
         }
-
         return true;
     }
 
-    componentWillReceiveProps = (nextProps) => {
-        //this.setState({ selectedKeys: nextProps.selectedKeys });
-
-        this.setState({ 
-            data: nextProps.dataSource, 
-            startingData: nextProps.dataSource, 
-            forceFilterUpdate: true 
-        });
+    static getDerivedStateFromProps(props, state) {
+        // Ensures we update the active data from props, in the event deck changes from deckOps
+        return { startingData: props.dataSource };
     }
 
     /* ----- Callbacks for Table Component ----- */
@@ -468,14 +460,15 @@ const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableT
 class ManageDeckPage extends React.Component {
     // Data lives here to refresh table component upon change
     state = {
-        listOfCards: this.props.listOfCards
+        listOfCards: this.props.listOfCards,
+        // deckChanged used to determine if EditableFormTable should re-filter.
+        // Done here to easily attach to deckOps, if not the most elegant solution.
+        // Also allows EditableFormTable to wait for ManageDeckTable to pass the new list of cards.
+        deckChanged: false
     };
 
-    componentWillReceiveProps(nextProps) {
-        // When parent component gives a new list of cards, should update to it.
-        // This happens when the deck is reset, for example
-        const { listOfCards } = nextProps;
-        this.setState({ listOfCards });
+    static getDerivedStateFromProps(props, state) {
+        return { listOfCards: props.listOfCards };
     }
 
     get deckOps() {
@@ -483,7 +476,7 @@ class ManageDeckPage extends React.Component {
             return (...args) => {
                 func(...args);
                 // Can't use getter through props (evaluates in parent) so must explicitly call this function.
-                this.setState({ listOfCards: this.props.deckOps.getListOfCards() });
+                this.setState({ listOfCards: this.props.deckOps.getListOfCards(), deckChanged: true });
             }
         }
 
@@ -491,14 +484,20 @@ class ManageDeckPage extends React.Component {
         const deleteCard = refreshListOfCards(this.props.deckOps.deleteCard);
         const deleteCards = refreshListOfCards(this.props.deckOps.deleteCards);
         const editCard = refreshListOfCards(this.props.deckOps.editCard);
+        const resetDeck = refreshListOfCards(this.props.deckOps.resetDeck);
 
         return {
             ...this.props.deckOps,
             appendCard,
             deleteCard,
             deleteCards,
-            editCard
+            editCard,
+            resetDeck
         }
+    }
+
+    reportDealtWithChange = () => {
+        this.setState({ deckChanged: false});
     }
 
     render() {
@@ -506,9 +505,9 @@ class ManageDeckPage extends React.Component {
             <ErrorBoundary>
                 <Card style={{margin: "1.5% 5% 2% 5%"}}>
                     <EditableFormTable dataSource={this.state.listOfCards} 
-                        deckOps={this.deckOps}
-                        onSelectAll={this.onSelectAll}
-                        onFilterChange={this.onFilterChange}/>
+                        reportDealtWithChange={this.reportDealtWithChange}
+                        deckChanged={this.state.deckChanged}
+                        deckOps={this.deckOps}/>
                 </Card>
             </ErrorBoundary>
         )
