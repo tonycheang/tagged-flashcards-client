@@ -103,9 +103,7 @@ class Site extends React.Component {
         };
 
         return {
-            getListOfTags: deck.getListOfTags,
-            getCardFromKey: deck.getCardFromKey,
-            getListOfCards: deck.getListOfCards,
+            ...deck.deckOps,
             appendCard,
             editCard,
             deleteCard,
