@@ -45,6 +45,18 @@ export class Deck {
         this.active = [];
         this.uniqueCycleOfCards = [];
         this.tagCounts = {};
+        this.activeTags = [];
+    }
+
+    get deckOps() {
+        return {
+            getListOfTags: this.getListOfTags,
+            getCardFromKey: this.getCardFromKey,
+            getListOfCards: this.getListOfCards,
+            appendCard: this.appendCard,
+            editCard: this.editCard,
+            deleteCard: this.deleteCard
+        }
     }
 
     getListOfTags() {
