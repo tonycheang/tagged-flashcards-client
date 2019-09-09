@@ -52,7 +52,6 @@ class EditableTable extends React.Component {
             rowTags: [],
             sortedInfo: null,
             data: this.props.dataSource,
-            startingData: this.props.dataSource,
             filters: []
         };
 
@@ -74,24 +73,7 @@ class EditableTable extends React.Component {
         // Don't update on filter change and search input change.
         if (nextProps.deckChanged || searchChanged || filtersChanged || noLongerCreatingNewCard) {
             // Filters from what parent component passes down.
-            let newData = nextState.startingData;
-
-            // Don't filter if empty inputs though.
-            if (nextState.searchInput !== "") {
-                newData = newData.filter((flashcard) => {
-                    return flashcard.includes(nextState.searchInput) || flashcard.isNewCard;
-                });
-            }
-
-            if (nextState.filters.length !== 0) {
-                newData = newData.filter((flashcard) => {
-                    for (let tag of nextState.filters) {
-                        if (flashcard.isTagged(tag) || flashcard.isNewCard)
-                            return true;
-                    }
-                    return false;
-                });
-            }
+            let newData = this.filterData(nextProps, nextState);
             // Rely on data change to update component.
             this.setState({ data: newData });
             this.props.reportDealtWithChange();
@@ -100,9 +82,28 @@ class EditableTable extends React.Component {
         return true;
     }
 
-    static getDerivedStateFromProps(props, state) {
-        // Ensures we update the active data from props, in the event deck changes from deckOps
-        return { startingData: props.dataSource };
+    filterData = (nextProps, nextState) => {
+        // Props will always contain the full list of cards, so pull starting data from that.
+        let newData = nextProps.dataSource;
+
+        // Don't filter if empty inputs though.
+        if (nextState.searchInput !== "") {
+            newData = newData.filter((flashcard) => {
+                return flashcard.includes(nextState.searchInput) || flashcard.isNewCard;
+            });
+        }
+
+        if (nextState.filters.length !== 0) {
+            newData = newData.filter((flashcard) => {
+                for (let tag of nextState.filters) {
+                    if (flashcard.isTagged(tag) || flashcard.isNewCard)
+                        return true;
+                }
+                return false;
+            });
+        }
+
+        return newData;
     }
 
     /* ----- Callbacks for Table Component ----- */
@@ -145,7 +146,8 @@ class EditableTable extends React.Component {
                 } else {
                     message.info(`Deselected all cards.`)
                 }
-                
+            } else {
+                throw Error("Assertion Error: invalid state for EdtiableTable selectAllMode");
             }
         }
     }
@@ -455,7 +457,7 @@ class EditableTable extends React.Component {
     }
 }
 
-const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableTable);
+export const EditableFormTable = Form.create({ name: "Editable Form Table" })(EditableTable);
 
 class ManageDeckPage extends React.Component {
     // Data lives here to refresh table component upon change
@@ -497,7 +499,8 @@ class ManageDeckPage extends React.Component {
     }
 
     reportDealtWithChange = () => {
-        this.setState({ deckChanged: false});
+        // Flag in state to refresh child component.
+        this.setState({ deckChanged: false });
     }
 
     render() {
