@@ -3,7 +3,8 @@ import { shallow, mount } from 'enzyme';
 import { Deck, FlashCard, buildDefaultDeck } from './Deck';
 import { message } from 'antd';
 import ManageDeckPage from './ManageDeckPage';
-import { EditableFormTable } from './ManageDeckPage';
+import { EditableTable } from './ManageDeckPage';
+import ExpectationFailed from 'jest-jasmine2/build/ExpectationFailed';
 
 let deck, deckOps, cards;
 
@@ -83,57 +84,111 @@ describe("updates state and passes condition to EditableFormTable to deckChanged
 
 describe("editable form table unit tests", () => {
 
-    let eftWrapper;
+    const reportDealtWithChange = jest.fn();
+    let etWrapper;
 
     beforeEach(() => {
-        eftWrapper = shallow(<EditableFormTable dataSource={cards} deckOps={deckOps} />);
+        // must use shallow since we're not using Form.create() but we are using renderCell component
+        // which requires getFieldDecorator to be passed to it. Save mount for integration test
+        etWrapper = shallow(<EditableTable dataSource={cards} 
+            deckChanged={false}
+            reportDealtWithChange={reportDealtWithChange} 
+            deckOps={deckOps} />
+        );
     });
 
     afterEach(() => {
-        eftWrapper.unmount();
+        etWrapper.unmount();
+        jest.clearAllMocks();
     });
 
-    describe("filtering data", () => {
+    describe("filtering data in ShouldComponentUpdate", () => {
+
+        let setStateSpy, filterDataSpy;
+
+        beforeEach(() => {
+            filterDataSpy = jest.spyOn(etWrapper.instance(), "filterData");
+            setStateSpy = jest.spyOn(etWrapper, "setState");
+        });
+
+        afterEach(() => {
+            filterDataSpy.mockClear();
+            setStateSpy.mockClear();
+        });
 
         it("updates state's data", () => {
-
+            expect(setStateSpy).not.toHaveBeenCalled();
+            etWrapper.setProps({ deckChanged: true });
+            // nothing changed; checking that it was called with an object containing the data property
+            expect(setStateSpy).toHaveBeenCalledWith(expect.objectContaining({ data: cards }));
         });
 
         it("keeps only cards that contain search input", () => {
-
+            const searchInput = "jack";
+            expect(filterDataSpy).not.toHaveBeenCalled();
+            etWrapper.setState({ searchInput });
+            expect(filterDataSpy).toHaveBeenCalledTimes(1);
+            const cardsContainingJack = cards.filter(card => card.includes(searchInput));
+            
+            expect(filterDataSpy).toHaveReturnedWith(expect.arrayContaining(cardsContainingJack));
+            expect(setStateSpy).toHaveBeenCalledWith(expect.objectContaining({ data: cardsContainingJack }));
         });
 
         it("takes filters from the table component", () => {
-
+            const pagination = 1;
+            const fakeFilters = { tags: ["animals", "baz"] };
+            etWrapper.instance().handleTableChange(pagination, fakeFilters);
+            
+            expect(setStateSpy).toHaveBeenCalledWith(expect.objectContaining({ filters: fakeFilters.tags }));
         });
 
         it("keeps only cards that contain tags selected from the table component", () => {
-
+            const pagination = 1;
+            const fakeFilters = { tags: ["animals", "baz"] };
+            etWrapper.instance().handleTableChange(pagination, fakeFilters);
+            const cardsTaggedAnimalsOrBaz = cards.filter(card => card.isTagged("animals") || card.isTagged("baz"));
+            
+            expect(setStateSpy).toHaveBeenCalledWith(expect.objectContaining({ data: cardsTaggedAnimalsOrBaz }));
         });
 
         it("keeps only cards matching criteria of search input  \
             and tags selected from the table componenet", () => {
+                const searchInput = "jack";
+                const pagination = 1;
+                const fakeFilters = { tags: ["animals", "baz"] };
+                etWrapper.instance().handleTableChange(pagination, fakeFilters);
+                etWrapper.setState({ searchInput });
 
-        });
-
-        it("happens when search bar changes", () => {
-
-        });
-
-        it("happens when selected filters change", () => {
-
+                const cardsContaingJackAndTaggedAnimalsOrBaz = 
+                    cards.filter((card) => { 
+                        return card.includes(searchInput) && 
+                            (card.isTagged("animals") || card.isTagged("baz"));
+                    });
+                expect(setStateSpy).toHaveBeenCalledWith(expect.objectContaining({ data: cardsContaingJackAndTaggedAnimalsOrBaz }));
         });
 
         it("happens when noLongerCreating new card (action canceled)", () => {
-
+            etWrapper.setState({ creatingNewCard: true });
+            setStateSpy.mockClear();
+            filterDataSpy.mockClear();
+            etWrapper.setState({ creatingNewCard: false });
+            // Once above, once in shouldComponentUpdate
+            expect(setStateSpy).toHaveBeenCalledTimes(2);
+            expect(filterDataSpy).toHaveBeenCalled(); 
         });
 
         it("happens when deckChanged is true in props", () => {
-
+            etWrapper.setProps({ deckChanged: true });
+            expect(setStateSpy).toHaveBeenCalled();
+            expect(filterDataSpy).toHaveBeenCalled(); 
         });
 
-        it("reports finsihed to parent by calling callback", () => {
-
+        it("reports finished to parent by calling callback", () => {
+            expect(reportDealtWithChange).not.toHaveBeenCalled();
+            etWrapper.setProps({ deckChanged: true });
+            expect(setStateSpy).toHaveBeenCalled();
+            expect(filterDataSpy).toHaveBeenCalled(); 
+            expect(reportDealtWithChange).toHaveBeenCalled();
         });
 
     });
@@ -261,4 +316,15 @@ describe("editable form table unit tests", () => {
     });
 });
 
+describe("integration tests for editable table", () => {
 
+    describe("filtering data in ShouldComponentUpdate", () => {
+        it("happens when search bar changes", () => {
+
+        });
+
+        it("happens when selected filters change", () => {
+
+        });
+    });
+});
