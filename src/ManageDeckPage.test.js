@@ -193,47 +193,36 @@ describe("editable form table unit tests", () => {
 
     });
 
-    describe("selecting all", () => {
-        it("in select-all mode selects all across pages", () => {
-
-        });
-
-        it("in select-page mode selects only the current page", () => {
-
-        });
-
-        it("in select-all mode deselected all across all pages", () => {
-
-        });
-
-        it("in select-page mode deselects only the current page", () => {
-
-        });
-
-        it("reports the number selected", () => {
-
-        });
-
-        it("reports the number deselected or all-deselected", () => {
-
-        });
-    });
-
     describe("delete selected rows", () => {
-        it("calls deleteCards with selected keys", () => {
 
+        let messageSpy;
+        const selectedRowKeys = [0, 1, 2];
+
+        beforeEach(() => {
+            messageSpy = jest.spyOn(message, "success");
+            etWrapper.setState({ selectedRowKeys });
+            expect(messageSpy).not.toHaveBeenCalled();
+            etWrapper.instance().deleteSelectedRows();
+        });
+
+        afterEach(() => {
+            messageSpy.mockClear();
+        });
+
+        it("calls deleteCards with selected keys", () => {
+            expect(deckOps.deleteCards).toHaveBeenCalledWith(expect.arrayContaining(selectedRowKeys));
         });
 
         it("notifies the user of the deletion", () => {
-
+            expect(messageSpy).toHaveBeenCalled();
         });
 
         it("notifies the user of the number deleted", () => {
-
+            expect(messageSpy).toHaveBeenCalledWith(expect.stringContaining(selectedRowKeys.length.toString()));
         });
 
-        it("empties state's selected row keys", () => {
-
+        it("empties state's selectedRowKeys", () => {
+            expect(etWrapper.state().selectedRowKeys.length).toBe(0);
         });
     });
 
@@ -324,6 +313,34 @@ describe("integration tests for editable table", () => {
         });
 
         it("happens when selected filters change", () => {
+
+        });
+    });
+
+    describe("selecting all", () => {
+        // all-data and page-data
+        it("in select-all mode selects all across pages", () => {
+            // etWrapper.instance().selectAllMode = "all-data";
+            
+        });
+
+        it("in select-page mode selects only the current page", () => {
+
+        });
+
+        it("in select-all mode deselected all across all pages", () => {
+
+        });
+
+        it("in select-page mode deselects only the current page", () => {
+
+        });
+
+        it("reports the number selected", () => {
+
+        });
+
+        it("reports the number deselected or all-deselected", () => {
 
         });
     });
