@@ -39,7 +39,7 @@ class EditableCell extends React.Component {
     }
 }
 
-class EditableTable extends React.Component {
+export class EditableTable extends React.Component {
     constructor(props) {
         super(props);
 
