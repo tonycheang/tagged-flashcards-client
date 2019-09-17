@@ -6,8 +6,7 @@ import _ from 'lodash';
 class TransferTagsModal extends React.Component {
     constructor(props) {
         super(props);
-        const savedSettings = JSON.parse(localStorage.getItem("activeTags"));
-        this.tagsStatuses = { ...savedSettings };
+        const savedSettings = JSON.parse(localStorage.getItem("activeTags")) || {};
 
         this.tagsToKeys = {};
         this.keysToTags = {};
@@ -22,7 +21,7 @@ class TransferTagsModal extends React.Component {
 
         const rightColumnKeys = Object
                                 .entries(this.tagsToKeys)
-                                .filter(([tag, _]) => { return savedSettings[tag] })
+                                .filter(([tag, _]) => { return savedSettings[tag] || false })
                                 .map(([_, key]) => { return key });
 
         this.startingRightColumnKeys = rightColumnKeys;
@@ -86,7 +85,7 @@ class TransferTagsModal extends React.Component {
                     onCancel={this.props.closeModal}
                     onOk={this.handleClose}>
                     <div style={{ display: "flex", justifyContent: "center", alignContent: "center" }}>
-                        <Transfer listStyle={{ height: 450 }}
+                        <Transfer listStyle={{ height: 450, width: 200 }}
                             dataSource={keyedTags}
                             titles={["Inactive", "Active"]}
                             targetKeys={rightColumnKeys}
