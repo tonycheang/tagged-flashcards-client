@@ -151,7 +151,7 @@ class Site extends React.Component {
             case menuKeys.review:
                 this.activeMain = <div>
                                 <div style={{ marginTop: "1%" }}>
-                                    <header> Flash Cards for Japanese </header>
+                                    <header> Customized Study Session </header>
                                 </div>
                                 <FlashCardApp currentCard={this.state.currentCard}
                                     changeCard={this.changeCard}
