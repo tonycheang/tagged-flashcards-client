@@ -332,12 +332,12 @@ export function buildDefaultDeck() {
         "ティ", "ディ", "デュ", "トゥ"
     ];
 
-    zipAndAppendToDeck(katakanaForeign, katakanaForeignPhonetic, ["foreign katakana"], defaultDeck);
-    zipAndAppendToDeck(katakanaYoOn, katakanaYoOnPhonetic, ["contracted katakana"], defaultDeck);
-    zipAndAppendToDeck(katakanaDakuOn, katakanaDakuOnPhonetic, ["voiced katakana"], defaultDeck);
+    zipAndAppendToDeck(katakanaForeign, katakanaForeignPhonetic, ["foreign katakana", "foreign", "katakana", "kana"], defaultDeck);
+    zipAndAppendToDeck(katakanaYoOn, katakanaYoOnPhonetic, ["contracted katakana", "contracted", "katakana", "kana"], defaultDeck);
+    zipAndAppendToDeck(katakanaDakuOn, katakanaDakuOnPhonetic, ["voiced katakana", "voiced", "katakana", "kana"], defaultDeck);
     zipAndAppendToDeck(katakanaSeiOn, katakanaSeiOnPhonetic, ["basic katakana", "basic", "katakana", "kana"], defaultDeck);
-    zipAndAppendToDeck(hiraganaYoOn, hiraganaYoOnPhoenetic, ["contracted hiragana"], defaultDeck);
-    zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, ["voiced hiragana"], defaultDeck);
+    zipAndAppendToDeck(hiraganaYoOn, hiraganaYoOnPhoenetic, ["contracted hiragana", "contracted", "hiragana", "kana"], defaultDeck);
+    zipAndAppendToDeck(hiraganaDakuOn, hiraganaDakuOnPhonetic, ["voiced hiragana", "voiced", "hiragana", "kana"], defaultDeck);
     zipAndAppendToDeck(hiraganaSeiOn, hiraganaSeiOnPhonetic, ["basic hiragana", "basic", "hiragana", "kana"], defaultDeck);
 
     defaultDeck.rebuildActive(["basic hiragana"]);
