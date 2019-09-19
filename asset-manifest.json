@@ -1,17 +1,17 @@
 {
   "files": {
-    "main.css": "/japanese-flash-cards/static/css/main.2193643b.chunk.css",
-    "main.js": "/japanese-flash-cards/static/js/main.2fcb8503.chunk.js",
-    "main.js.map": "/japanese-flash-cards/static/js/main.2fcb8503.chunk.js.map",
-    "runtime~main.js": "/japanese-flash-cards/static/js/runtime~main.e143d4ba.js",
-    "runtime~main.js.map": "/japanese-flash-cards/static/js/runtime~main.e143d4ba.js.map",
-    "static/css/2.7c2c7a7e.chunk.css": "/japanese-flash-cards/static/css/2.7c2c7a7e.chunk.css",
-    "static/js/2.45547239.chunk.js": "/japanese-flash-cards/static/js/2.45547239.chunk.js",
-    "static/js/2.45547239.chunk.js.map": "/japanese-flash-cards/static/js/2.45547239.chunk.js.map",
-    "index.html": "/japanese-flash-cards/index.html",
-    "precache-manifest.7a3238347d99de668a6b589e1b9e8fe8.js": "/japanese-flash-cards/precache-manifest.7a3238347d99de668a6b589e1b9e8fe8.js",
-    "service-worker.js": "/japanese-flash-cards/service-worker.js",
-    "static/css/2.7c2c7a7e.chunk.css.map": "/japanese-flash-cards/static/css/2.7c2c7a7e.chunk.css.map",
-    "static/css/main.2193643b.chunk.css.map": "/japanese-flash-cards/static/css/main.2193643b.chunk.css.map"
+    "main.css": "/tagged-flash-cards/static/css/main.2193643b.chunk.css",
+    "main.js": "/tagged-flash-cards/static/js/main.6a1d3d29.chunk.js",
+    "main.js.map": "/tagged-flash-cards/static/js/main.6a1d3d29.chunk.js.map",
+    "runtime~main.js": "/tagged-flash-cards/static/js/runtime~main.82b695ae.js",
+    "runtime~main.js.map": "/tagged-flash-cards/static/js/runtime~main.82b695ae.js.map",
+    "static/css/2.7a1db334.chunk.css": "/tagged-flash-cards/static/css/2.7a1db334.chunk.css",
+    "static/js/2.c65d31c2.chunk.js": "/tagged-flash-cards/static/js/2.c65d31c2.chunk.js",
+    "static/js/2.c65d31c2.chunk.js.map": "/tagged-flash-cards/static/js/2.c65d31c2.chunk.js.map",
+    "index.html": "/tagged-flash-cards/index.html",
+    "precache-manifest.e17c094a13945c51fbc95ced5fd0598b.js": "/tagged-flash-cards/precache-manifest.e17c094a13945c51fbc95ced5fd0598b.js",
+    "service-worker.js": "/tagged-flash-cards/service-worker.js",
+    "static/css/2.7a1db334.chunk.css.map": "/tagged-flash-cards/static/css/2.7a1db334.chunk.css.map",
+    "static/css/main.2193643b.chunk.css.map": "/tagged-flash-cards/static/css/main.2193643b.chunk.css.map"
   }
 }
