@@ -280,7 +280,10 @@ export class EditableTable extends React.Component {
                 title: "Tags",
                 dataIndex: "tags",
                 key: "tags",
-                filters: this.props.deckOps.getListOfTags().map((tag) => { return {text: tag, value: tag} }),
+                filters: this.props.deckOps
+                    .getListOfTags()
+                    .map((tag) => { return {text: tag, value: tag} })
+                    .sort((textValA, textValB) => textValA.text.localeCompare(textValB.text)),
                 render: (text, record, dataIndex) => {
                     const editable = this.isEditing(record);
 
