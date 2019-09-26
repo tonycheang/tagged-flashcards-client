@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "homepage": "http://tonycheang.github.io/tagged-flash-cards",
   "private": true,
+  "proxy": "http://localhost:5000/",
   "dependencies": {
     "@types/jest": "^24.0.18",
     "antd": "^3.19.7",
