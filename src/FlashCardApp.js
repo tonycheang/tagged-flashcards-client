@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Card, Input, Empty } from 'antd';
+import { Button, Card, Input, Empty, Form } from 'antd';
 import ErrorBoundary from './ErrorBoundary';
 import './FlashCardApp.css';
 
@@ -32,40 +32,25 @@ class FlashCardApp extends React.Component {
   }
 
   componentDidMount() {
-    window.addEventListener("keydown", this.handleInput);
+    window.addEventListener("keydown", this.handleRevealButton);
   }
 
   componentWillUnmount() {
-    window.removeEventListener("keydown", this.handleInput);
+    window.removeEventListener("keydown", this.handleRevealButton);
   }
 
-  handleInput(event) {
-    if (!this.props.answering)
-      return;
-
-    if (this.state.firstTimeTyping)
-      this.setState({ firstTimeTyping: false });
-
+  handleRevealButton = (event) => {
     if (event.key === "Enter") {
       if (this.state.justRevealed)
         this.resetInputAfterReveal();
       else
         this.showAnswer();
     }
+  }
 
-    let curText = this.state.typed;
-    let isCharacter = /^.$/;
-    if (event.key === "Backspace") {
-      if (curText.length > 0) {
-        this.setState({ typed: curText.slice(0, curText.length - 1) })
-      }
-      // should test for other allowable keys here (sentences have punctuation)
-    } else if (isCharacter.test(event.key)) {
-      this.setState((state) => { return {typed: state.typed + event.key} });
-    } else {
-      // Do not extend timer for input or report correctness
-      return;
-    }
+  handleInput() {
+    if (this.state.firstTimeTyping)
+      this.setState({ firstTimeTyping: false });
 
     // Extend the timer to recognize input if it exists, otherwise make one
     if (this.state.typingTimer)
@@ -73,55 +58,61 @@ class FlashCardApp extends React.Component {
     this.setState({ typingTimer: setTimeout(this.reportCorrectness, 300) });
   }
 
-  showAnswer(event) {
+  showAnswer() {
     if (this.state.firstTimeTyping)
       this.setState({ firstTimeTyping: false });
 
-    this.setState({ justRevealed: true, typed: this.props.currentCard.back })
+    // this.setState({ justRevealed: true, typed: this.props.currentCard.back });
+    this.setState({ justRevealed: true });
+    this.props.form.setFieldsValue({ typed: this.props.currentCard.back });
   }
 
   reportCorrectness() {
     /* Flashes red or green on the page depending on input correctness */
-    if (!this.props.answering)
-      return;
-
     // Don't accept input if card got revealed
-    if (this.state.justRevealed || !this.props.currentCard.back)
+    if (this.state.justRevealed || !this.props.currentCard || !this.props.currentCard.back)
       return;
 
-    let currentCard = this.props.currentCard;
-    let answer = currentCard.back;
-    let typed = this.state.typed.toLowerCase();
 
-    // Don't report if the first few characters are correct
-    if (typed.length < answer.length) {
-      if (currentCard.answerStartsWith(typed))
-        return;
-    }
+    this.props.form.validateFields((err, vals) => {
+      let currentCard = this.props.currentCard;
+      let answer = currentCard.back;
+      let typed = vals.typed;
 
-    if (currentCard.hasAnswer(typed)) {
-      this.setState({ backgroundColor: "#f6ffed", border: "1px solid #b7eb8f" });
-      this.resetInputAfterTyping(true);
-    } else {
-      this.setState({ backgroundColor: "#fff1f0", border: "1px solid #ffa39e" });
-      this.resetInputAfterTyping(false);
-    }
+      // Don't report if the first few characters are correct
+      if (typed.length < answer.length) {
+        if (currentCard.answerStartsWith(typed))
+          return;
+      }
+
+      if (currentCard.hasAnswer(typed)) {
+        this.setState({ backgroundColor: "#f6ffed", border: "1px solid #b7eb8f" });
+        this.resetInputAfterTyping(true);
+      } else {
+        this.setState({ backgroundColor: "#fff1f0", border: "1px solid #ffa39e" });
+        this.resetInputAfterTyping(false);
+      }
+    });
   }
 
   resetInput(delay, nextCard) {
     /* Used to create partial functions via method.bind() for callback */
     if (nextCard) {
-      this.setState({ typed: "" });
+      // this.setState({ typed: "" });
       this.props.changeCard();
     }
     setTimeout(() => this.setState({ backgroundColor: this.defaultBackgroundColor, border: "1px solid" }), delay);
-    this.setState({ typed: "", typingTimer: null, justRevealed: false });
+    // this.setState({ typed: "", typingTimer: null, justRevealed: false });
+    this.setState({ typingTimer: null, justRevealed: false });
+    this.props.form.setFieldsValue({ typed: "" });
   }
 
   render() {
+    const { getFieldDecorator } = this.props.form;
+
     let card = this.props.currentCard;
     if (!card) {
-      card = {prompt: <Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} />}
+      card = { prompt: <Empty description="No active cards!" image={Empty.PRESENTED_IMAGE_SIMPLE} /> }
     }
 
     let defaultText = this.state.firstTimeTyping ? "answer here" : "";
@@ -145,11 +136,14 @@ class FlashCardApp extends React.Component {
               {card.front}
             </div>
             <div align="center" style={{ margin: "2%", width: "80%" }}>
-              <Input autoFocus ghost="true"
-                placeholder={defaultText}
-                value={this.state.typed}
-                style={inputFieldStyle}
-                onChange={this.handleInput} />
+              {
+                getFieldDecorator("typed")(
+                  <Input autoFocus ghost="true"
+                    placeholder={defaultText}
+                    style={inputFieldStyle}
+                    onChange={this.handleInput} />
+                )
+              }
             </div>
             <div>{displayButton}</div>
           </Card>
@@ -159,4 +153,4 @@ class FlashCardApp extends React.Component {
   };
 }
 
-export default FlashCardApp;
+export default Form.create({ name: "flashcardapp" })(FlashCardApp);
