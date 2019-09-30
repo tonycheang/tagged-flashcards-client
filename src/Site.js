@@ -1,10 +1,12 @@
 import React from 'react';
 import { buildDefaultDeck, Deck } from './Deck';
 import { Icon, Menu, Layout, message } from "antd";
-import FlashCardApp from './FlashCardApp';
-import TransferTagsModal from './TransferTagsModal';
-import ManageDeckPage from './ManageDeckPage';
 import ErrorBoundary from './ErrorBoundary';
+
+import FlashCardApp from './FlashCardApp';
+import ManageDeckPage from './ManageDeckPage';
+import TransferTagsModal from './TransferTagsModal';
+import AuthenticationModal from './AuthenticationModal';
 import "./Site.css";
 
 const { Content } = Layout;
@@ -121,7 +123,7 @@ class Site extends React.Component {
                             <Menu.Item id={menuKeys.manage} key={menuKeys.manage}><Icon type="edit"></Icon>Manage Deck</Menu.Item>
                             <Menu.Item id={menuKeys.stats} key={menuKeys.stats} disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
                             
-                            <Menu.Item id={menuKeys.login} key={menuKeys.login} style={ {float: "right"} } disabled>
+                            <Menu.Item id={menuKeys.login} key={menuKeys.login} style={ {float: "right"} }>
                                 <Icon type="login"></Icon>
                                 Log In
                             </Menu.Item>
@@ -141,6 +143,14 @@ class Site extends React.Component {
                             changeCard={this.changeCard}
                             visible={this.state.selected === menuKeys.tags}>
                         </TransferTagsModal>
+                break;
+            case menuKeys.login:
+                modal = (
+                    <AuthenticationModal 
+                        closeModal={this.closeModal}
+                        visible={this.state.selected === menuKeys.login}>
+                    </AuthenticationModal>
+                );
                 break;
             case menuKeys.manage:
                 // Use this.activeMain so the modal persists over the active page.
