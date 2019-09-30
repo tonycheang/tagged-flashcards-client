@@ -57,9 +57,10 @@ class Login extends React.Component {
                     onClick={this.login}>
                     Log In
                 </Button>
-                <span className="footerText">
-                    Don't have an account?
-                    <Button size="small" type="link" onClick={switchToSignup}>
+                <span className="footer">
+                    {/* SHIFT THIS TEXT DOWNWARD! */}
+                    <p className="footerText">Don't have an account?</p>
+                    <Button className="footerButton" size="small" type="link" onClick={switchToSignup}>
                         Sign up
                     </Button>
                 </span>
@@ -117,9 +118,9 @@ class SignUp extends React.Component {
                     onClick={this.signup}>
                     Sign up
                 </Button>
-                <span className="footerText">
-                    Have an account?
-                    <Button size="small" type="link" onClick={switchToLogin}>
+                <span className="footer">
+                    <p className="footerText">Have an account?</p>
+                    <Button className="footerButton" size="small" type="link" onClick={switchToLogin}>
                         Log in
                     </Button>
                 </span>

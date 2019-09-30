@@ -22,7 +22,20 @@
     width: 100%
 }
 
-.footerText {
+.footer {
     display: flex;
     justify-content: center;
+    margin: 0px 0px 0px 0px;
+    padding-bottom: 0px;
+}
+
+.footerText {
+    /* display: inline; */
+    margin-top: 8px;
+    margin-bottom: 2px;
+}
+
+.footerButton {
+    margin-top: 6px;
+    margin-bottom: 2px;
 }
