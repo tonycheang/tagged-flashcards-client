@@ -1,0 +1,28 @@
+@import '~antd/dist/antd.css';
+
+.title {
+    margin-bottom: 0;
+    margin-top: 5;
+}
+
+.form {
+    margin: 0px 0px 20px 0px;
+    padding: 0px 0px 0px 0px;
+}
+
+.formItem {
+    margin: 0px 0px 8px 0px;
+    padding: 0px 0px 0px 0px;
+    width: 100%
+}
+
+.formButton {
+    margin: 10px 0px 0px 0px;
+    padding: 0px 0px 0px 0px;
+    width: 100%
+}
+
+.footerText {
+    display: flex;
+    justify-content: center;
+}
