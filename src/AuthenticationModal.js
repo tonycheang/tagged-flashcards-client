@@ -10,7 +10,7 @@ async function dispatch(path, objectToStringify) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(objectToStringify)
         }
-    ).then(res => res.json());
+    );
 }
 
 function withResponseHandlers(WrappedComponent) {
@@ -21,16 +21,16 @@ function withResponseHandlers(WrappedComponent) {
             errorMessage: ""
         }
     
-        onSuccess = (response) => {
+        onSuccess = async (response) => {
             this.setState({ loading: false });
+            const body = await response.json();
 
-            // If it quacks like a duck, handle server error by setting state.
-            if (response.error) {
-                message.error(response.error);
+            if (response.status >= 400) {
+                message.error(body.error);
                 // These state variables are passed down as props.
-                this.setState({ error: true, errorMessage: response.error });
+                this.setState({ error: true, errorMessage: body.error });
             } else {
-                message.success(response.message);
+                message.success(body.message);
                 this.props.closeModal();
             }
         }
@@ -41,12 +41,13 @@ function withResponseHandlers(WrappedComponent) {
         }
 
         render() {
-            const { loading, error, errorMessage } = this.state.loading;
+            const { error, errorMessage, loading } = this.state;
             return (
                 <WrappedComponent 
-                    loading={loading} 
+                    loading={loading}
                     error={error}
                     errorMessage={errorMessage}
+                    setLoading={(loading) => { this.setState({ loading })}}
                     onSuccess={this.onSuccess}
                     onError={this.onError}
                     {...this.props}>
@@ -57,18 +58,27 @@ function withResponseHandlers(WrappedComponent) {
 }
 
 class Login extends React.Component {
-    login = async () => {
-        let username, password;
+
+    login = async (event) => {
+        event.preventDefault();
+
+        // validateFields eats throw errors in the callback.
+        // using "flag" errObj to save info about error instead.
+        let username, password, errObj;
         this.props.form.validateFields((err, vals) => {
+            if (err) {
+                errObj = err;
+                return;
+            }
             username = vals.username;
             password = vals.password;
         });
+        
+        if (errObj) return;
 
-        if (!username || !password) {
-            // send a message or otherwise feedback about requirements
-            return;
-        }
-        const { onSuccess, onError } = this.props;
+        const { onSuccess, onError, setLoading } = this.props;
+        setLoading(true);
+
         return dispatch("/auth/login", { username, password })
             .then(data => { onSuccess(data) })
             .catch(err => onError(err));
@@ -76,28 +86,41 @@ class Login extends React.Component {
 
     render() {
         const { getFieldDecorator } = this.props.form;
-        const { switchToSignup } = this.props;
+        const { switchToSignup, loading } = this.props;
 
         return (
             <div>
-                <Form className="form">
+                <Form onSubmit={this.login} className="form">
                     <Form.Item className="formItem" key={1}>
-                        {getFieldDecorator("username")(
-                            <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
-                                placeholder="Username" 
-                            />
-                        )}
+                        {
+                            getFieldDecorator("username",
+                                {
+                                    rules: [{required: true, message: "Please enter your username or email."}]
+                                }
+                            )(
+                                <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
+                                    placeholder="Username or email" 
+                                />
+                            )
+                        }
                     </Form.Item>
                     <Form.Item className="formItem" key={2}>
-                        {getFieldDecorator("password")(<Input.Password placeholder="Password" />)}
+                        {getFieldDecorator("password", 
+                            {
+                                rules: [{required: true, message: "Please enter your password."}]
+                            }
+                        )(<Input.Password placeholder="Password" />)}
+                    </Form.Item>
+                    <Form.Item className="formItem">
+                        <Button
+                            className="formButton"
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}>
+                            Log In
+                        </Button>
                     </Form.Item>
                 </Form>
-                <Button
-                    className="formItem"
-                    type="primary"
-                    onClick={this.login}>
-                    Log In
-                </Button>
                 <span className="footer">
                     <p className="footerText">Don't have an account?</p>
                     <Button className="footerButton" size="small" type="link" onClick={switchToSignup}>
@@ -110,21 +133,29 @@ class Login extends React.Component {
 }
 
 class SignUp extends React.Component {
-    signup = async () => {
-        let username, password, email;
+
+    signup = async (event) => {
+        event.preventDefault();
+
+        // validateFields eats throw errors in the callback.
+        // using "flag" errObj to save info about error instead.
+        let username, password, email, errObj;
         this.props.form.validateFields((err, vals) => {
+            if (err) {
+                errObj = err;
+                return;
+            }
+
             username = vals.username;
             password = vals.password;
             email = vals.email;
         });
 
-        if (!username || !password || !email) {
-            // send a message or otherwise feedback about requirements
-            return;
-        }
-        this.setState({ loading: true });
+        if (errObj) return;
 
-        const { onSuccess, onError } = this.props;
+        const { onSuccess, onError, setLoading } = this.props;
+        setLoading(true);
+
         return dispatch("/auth/signup", { username, password, email })
             .then(data => onSuccess(data))
             .catch(err => onError(err));
@@ -133,35 +164,54 @@ class SignUp extends React.Component {
     // Tooltips / feedback about form validation.
     render() {
         const { getFieldDecorator } = this.props.form;
-        const { switchToLogin } = this.props;
+        const { switchToLogin, loading } = this.props;
 
         return (
             <div>
-                <Form>
+                <Form onSubmit={this.signup} className="form">
                     <Form.Item className="formItem" key={1}>
-                        {getFieldDecorator("username")(
-                            <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
-                                placeholder="Username" 
-                            />
-                        )}
+                        {
+                            getFieldDecorator("username", 
+                                {
+                                    rules: [{required: true, message: "Please enter a username."}]
+                                }
+                            )(
+                                <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
+                                    placeholder="Username" 
+                                />
+                            )
+                        }
                     </Form.Item>
                     <Form.Item className="formItem" key={2}>
-                        {getFieldDecorator("email")(
-                            <Input prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
-                                placeholder="Email" 
-                            />
-                        )}
+                        {
+                            getFieldDecorator("email", 
+                                {
+                                    rules: [{required: true, message: "Please enter your email."}]
+                                }
+                            )(
+                                <Input prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
+                                    placeholder="Email" 
+                                />
+                            )
+                        }
                     </Form.Item>
                     <Form.Item className="formItem" key={3}>
-                        {getFieldDecorator("password")(<Input.Password placeholder="Password" />)}
+                        {getFieldDecorator("password",
+                            {
+                                rules: [{required: true, message: "Please enter a password."}]
+                            }
+                        )(<Input.Password placeholder="Password" />)}
                     </Form.Item>
-                </Form>
-                <Button
-                    className="formItem"
-                    type="primary"
-                    onClick={this.signup}>
-                    Sign up
-                </Button>
+                    <Form.Item className="formItem">
+                        <Button
+                            className="formButton"
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}>
+                            Sign up
+                        </Button>
+                    </Form.Item>
+                    </Form>
                 <span className="footer">
                     <p className="footerText">Have an account?</p>
                     <Button className="footerButton" size="small" type="link" onClick={switchToLogin}>
