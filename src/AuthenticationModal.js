@@ -97,6 +97,7 @@ class Login extends React.Component {
 
         return (
             <div>
+                <p className="purpose"> To save your deck remotely. </p>
                 <Form onSubmit={this.login} className="form">
                     <Form.Item className="formItem" key={1}>
                         {

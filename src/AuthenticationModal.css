@@ -5,6 +5,13 @@
     margin-top: 5;
 }
 
+.purpose {
+    display: flex;
+    justify-content: center;
+    color: #8c8c8c;
+    margin-top: -10px;
+}
+
 .form {
     margin: 0px 0px -8px 0px;
     padding: 0px 0px 0px 0px;
