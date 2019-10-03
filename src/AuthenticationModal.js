@@ -1,10 +1,14 @@
 import React from 'react';
-import { Modal, Button, Form, Input, Icon, message } from "antd";
+import { Modal, Button, Form, Input, Icon, message, Tooltip } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 import './AuthenticationModal.css';
 
+// Suppresses internal warnings in the dev console. (Since will warn after each key input).
+import Schema from 'async-validator';
+Schema.warning = function () { };
+
 async function dispatch(path, objectToStringify) {
-    return fetch(path, 
+    return fetch(path,
         {
             method: "POST",
             headers: { 'Content-Type': 'application/json' },
@@ -20,21 +24,24 @@ function withResponseHandlers(WrappedComponent) {
             error: false,
             errorMessage: ""
         }
-    
+
         onSuccess = async (response) => {
             this.setState({ loading: false });
             const body = await response.json();
+            const SECONDS_TILL_CLOSE = 2.5;
 
             if (response.status >= 400) {
-                message.error(body.error);
+                message.destroy();
+                message.error(body.error, SECONDS_TILL_CLOSE);
                 // These state variables are passed down as props.
                 this.setState({ error: true, errorMessage: body.error });
             } else {
-                message.success(body.message);
+                message.destroy();
+                message.success(body.message, SECONDS_TILL_CLOSE);
                 this.props.closeModal();
             }
         }
-    
+
         onError = (err) => {
             this.setState({ loading: false });
             message.error("Opps! Something went wrong.");
@@ -43,11 +50,11 @@ function withResponseHandlers(WrappedComponent) {
         render() {
             const { error, errorMessage, loading } = this.state;
             return (
-                <WrappedComponent 
+                <WrappedComponent
                     loading={loading}
                     error={error}
                     errorMessage={errorMessage}
-                    setLoading={(loading) => { this.setState({ loading })}}
+                    setLoading={(loading) => { this.setState({ loading }) }}
                     onSuccess={this.onSuccess}
                     onError={this.onError}
                     {...this.props}>
@@ -73,7 +80,7 @@ class Login extends React.Component {
             username = vals.username;
             password = vals.password;
         });
-        
+
         if (errObj) return;
 
         const { onSuccess, onError, setLoading } = this.props;
@@ -95,19 +102,19 @@ class Login extends React.Component {
                         {
                             getFieldDecorator("username",
                                 {
-                                    rules: [{required: true, message: "Please enter your username or email."}]
+                                    rules: [{ required: true, message: "Please enter your username or email." }]
                                 }
                             )(
-                                <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
-                                    placeholder="Username or email" 
+                                <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                    placeholder="Username or email"
                                 />
                             )
                         }
                     </Form.Item>
                     <Form.Item className="formItem" key={2}>
-                        {getFieldDecorator("password", 
+                        {getFieldDecorator("password",
                             {
-                                rules: [{required: true, message: "Please enter your password."}]
+                                rules: [{ required: true, message: "Please enter your password." }]
                             }
                         )(<Input.Password placeholder="Password" />)}
                     </Form.Item>
@@ -133,6 +140,25 @@ class Login extends React.Component {
 }
 
 class SignUp extends React.Component {
+    state = {
+        fieldValidationTriggers: {
+            username: "onBlur",
+            email: "onBlur",
+            password: "onBlur"
+        }
+    }
+
+    onBlur = (event) => {
+        const fieldName = event.target.id.split("_")[1];
+        this.props.form.validateFields([fieldName], (err, vals) => {
+            // If there's an error when the user changes fields,
+            // The next time it should validate as it goes, not after blur.
+            // This provides immediate feedback that the user has entered the correct format.
+            const { fieldValidationTriggers } = this.state;
+            fieldValidationTriggers[fieldName] = err ? "onChange" : "onBlur";
+            this.setState({ fieldValidationTriggers });
+        });
+    }
 
     signup = async (event) => {
         event.preventDefault();
@@ -165,42 +191,69 @@ class SignUp extends React.Component {
     render() {
         const { getFieldDecorator } = this.props.form;
         const { switchToLogin, loading } = this.props;
+        const { fieldValidationTriggers } = this.state;
+
+        const tooltipProps = { placement: "right", trigger: "focus", hasFeedback: true };
 
         return (
             <div>
                 <Form onSubmit={this.signup} className="form">
                     <Form.Item className="formItem" key={1}>
-                        {
-                            getFieldDecorator("username", 
+                        <Tooltip title="6 - 64 characters" {...tooltipProps}>
+                            <div onBlur={this.onBlur}>
                                 {
-                                    rules: [{required: true, message: "Please enter a username."}]
+                                    getFieldDecorator("username",
+                                        {
+                                            validateTrigger: fieldValidationTriggers.username,
+                                            rules: [
+                                                { min: 6, required: true, message: "Must be at least 6 characters." },
+                                                { max: 64, message: "Username exceeds 64 character limit." }
+                                            ]
+                                        }
+                                    )(
+                                        <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                            placeholder="Username" id="username"
+                                        />
+                                    )
                                 }
-                            )(
-                                <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
-                                    placeholder="Username" 
-                                />
-                            )
-                        }
+                            </div>
+                        </Tooltip>
                     </Form.Item>
                     <Form.Item className="formItem" key={2}>
-                        {
-                            getFieldDecorator("email", 
-                                {
-                                    rules: [{required: true, message: "Please enter your email."}]
-                                }
-                            )(
-                                <Input prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }}/>} 
-                                    placeholder="Email" 
-                                />
-                            )
-                        }
+                        <div onBlur={this.onBlur}>
+                            {
+                                getFieldDecorator("email",
+                                    {
+                                        validateTrigger: fieldValidationTriggers.email,
+                                        rules: [
+                                            { required: true, type: "email", message: "Must be a valid email address." },
+                                            { max: 254, message: "Email exceeds 254 character limit." }
+                                        ]
+                                    }
+                                )(
+                                    <Input prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                        placeholder="Email"
+                                    />
+                                )
+                            }
+                        </div>
                     </Form.Item>
                     <Form.Item className="formItem" key={3}>
-                        {getFieldDecorator("password",
-                            {
-                                rules: [{required: true, message: "Please enter a password."}]
-                            }
-                        )(<Input.Password placeholder="Password" />)}
+                        <Tooltip title="8 - 50 characters." {...tooltipProps}>
+                            <div onBlur={this.onBlur}>
+                                {
+                                    getFieldDecorator("password",
+                                        {
+                                            validateTrigger: fieldValidationTriggers.password,
+                                            rules: [
+                                                { min: 8, required: true, message: "Must be at least 8 characters." },
+                                                { max: 50, message: "Password exceeds 50 character limit." }
+                                            ]
+                                        }
+                                    )(<Input.Password placeholder="Password" />)
+                                }
+                            </div>
+                        </Tooltip>
                     </Form.Item>
                     <Form.Item className="formItem">
                         <Button
@@ -211,7 +264,7 @@ class SignUp extends React.Component {
                             Sign up
                         </Button>
                     </Form.Item>
-                    </Form>
+                </Form>
                 <span className="footer">
                     <p className="footerText">Have an account?</p>
                     <Button className="footerButton" size="small" type="link" onClick={switchToLogin}>
@@ -252,9 +305,10 @@ class AuthenticationModal extends React.Component {
                 activeForm = (
                     <LoginForm closeModal={this.props.closeModal}
                         switchToSignup={
-                            () => { this.setState({ intention: this.intentions.signup }) 
-                        }
-                    }>
+                            () => {
+                                this.setState({ intention: this.intentions.signup })
+                            }
+                        }>
                     </LoginForm>
                 );
                 titleText = "Log In";
@@ -263,9 +317,10 @@ class AuthenticationModal extends React.Component {
                 activeForm = (
                     <SignUpForm closeModal={this.props.closeModal}
                         switchToLogin={
-                            () => { this.setState({ intention: this.intentions.login }) 
-                        }
-                    }>
+                            () => {
+                                this.setState({ intention: this.intentions.login })
+                            }
+                        }>
                     </SignUpForm>
                 )
                 titleText = "Sign Up";
