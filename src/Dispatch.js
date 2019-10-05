@@ -1,7 +1,11 @@
 async function dispatch(path, method, objectToStringify) {
     const cookies = document.cookie.split(";");
-    const xsrfString = cookies.filter(cookie => cookie.trim().startsWith("xsrf-token="))[0];
-    const xsrfToken = xsrfString.split('=')[1];
+
+    let xsrfString;
+    if (cookies) xsrfString = cookies.filter(cookie => cookie.trim().startsWith("xsrf-token="))[0];
+    
+    let xsrfToken;
+    if (xsrfString) xsrfToken = xsrfString.split('=')[1];
     
     return fetch(path,
         {
@@ -34,9 +38,7 @@ async function dispatchTries(path, method, data, options) {
             const res = await dispatch(attemptPath, attemptMethod, attemptData);
             const mostRecentInfo = await res.json();
 
-            if (options.returnRequestPath) {
-                requestPath.push({ res, info: mostRecentInfo });
-            }
+            requestPath.push({ res, info: mostRecentInfo });
             
             if (res.status >= 200 && res.status < 300) {
                 if (attemptPath === originalIntent.path) {
@@ -58,7 +60,12 @@ async function dispatchTries(path, method, data, options) {
         }
     }
 
-    throw Error(`dispatchTries failed action after ${options.maxTries} times.`);
+    const error = {
+                    error: "MaximumDispatchesReached",
+                    message: `dispatchTries failed action after ${options.maxTries} times.`,
+                    requestPath
+                  }
+    return error;
 }
 
 // dispatchTries("/api/get-deck", "POST", {}, { returnRequestPath: true }).then(res => console.log(res));
