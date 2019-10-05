@@ -59,6 +59,15 @@ class Site extends React.Component {
         };
     }
 
+    componentDidMount() {
+        return fetch("/auth/refresh-session",
+            {
+                method: "POST",
+                headers: { 'Content-Type':'application/json' }
+            }
+        ).then(res => res.json()).then(info => console.log(info)).catch(e => console.log(e))
+    }
+
     closeModal() {
         this.setState({ selected: this.state.prevSelected });
     }
