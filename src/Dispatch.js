@@ -35,15 +35,15 @@ async function dispatchTries(path, method, data, options) {
             const attemptData = suggestedRedirect.data ? suggestedRedirect.data : originalIntent.data;
             const attemptMethod = suggestedRedirect.method ? suggestedRedirect.method : originalIntent.method;
             
-            const res = await dispatch(attemptPath, attemptMethod, attemptData);
-            const mostRecentInfo = await res.json();
+            const mostRecentRes = await dispatch(attemptPath, attemptMethod, attemptData);
+            const mostRecentInfo = await mostRecentRes.json();
 
-            requestPath.push({ res, info: mostRecentInfo });
+            requestPath.push({ mostRecentRes, info: mostRecentInfo });
             
-            if (res.status >= 200 && res.status < 300) {
+            if (mostRecentRes.status >= 200 && mostRecentRes.status < 300) {
                 if (attemptPath === originalIntent.path) {
                     if (options.returnRequestPath)
-                        return { mostRecentInfo, requestPath }
+                        return { mostRecentInfo, mostRecentRes, requestPath, json: () => mostRecentInfo };
                     else
                         return mostRecentInfo;
                 }

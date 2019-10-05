@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, Button, Form, Input, Icon, message, Tooltip } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 import './AuthenticationModal.css';
-import { dispatch } from './Dispatch';
+import { dispatch, dispatchTries } from './Dispatch';
 
 // Suppresses internal warnings in the dev console. (Since will warn after each key input).
 import Schema from 'async-validator';
@@ -77,7 +77,8 @@ class Login extends React.Component {
         const { onSuccess, onError, setLoading } = this.props;
         setLoading(true);
 
-        return dispatch("/auth/login", "POST", { username, password })
+        return dispatchTries("/auth/login", "POST", { username, password })
+            .then(data => { console.log(data); return data })
             .then(data => { onSuccess(data) })
             .catch(err => onError(err));
     }
@@ -174,7 +175,8 @@ class SignUp extends React.Component {
         const { onSuccess, onError, setLoading } = this.props;
         setLoading(true);
 
-        return dispatch("/auth/signup", "POST", { username, password, email })
+        return dispatchTries("/auth/signup", "POST", { username, password, email })
+            .then(data => { console.log(data); return data })
             .then(data => onSuccess(data))
             .catch(err => onError(err));
     }
