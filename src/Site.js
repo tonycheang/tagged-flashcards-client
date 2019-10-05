@@ -9,6 +9,8 @@ import TransferTagsModal from './TransferTagsModal';
 import AuthenticationModal from './AuthenticationModal';
 import "./Site.css";
 
+import { dispatchTries } from './Dispatch';
+
 const { Content } = Layout;
 
 class Site extends React.Component {
@@ -46,7 +48,7 @@ class Site extends React.Component {
             manage: "manage",
             stats: "stats",
             login: "login",
-            tags: "tags", 
+            tags: "tags",
         });
 
         this.state = {
@@ -60,12 +62,9 @@ class Site extends React.Component {
     }
 
     componentDidMount() {
-        return fetch("/auth/refresh-session",
-            {
-                method: "POST",
-                headers: { 'Content-Type':'application/json' }
-            }
-        ).then(res => res.json()).then(info => console.log(info)).catch(e => console.log(e))
+        dispatchTries("/auth/refresh-session", "POST", {}, { maxTries: 3 })
+            .then(res => console.log(res))
+            .catch(e => console.log("Error in Site.js while attempting to refresh-session:", e));
     }
 
     closeModal() {
@@ -99,7 +98,7 @@ class Site extends React.Component {
         const appendCard = reportAndSaveChanges(deck.appendCard, deck);
         const editCard = reportAndSaveChanges(deck.editCard, deck);
         const deleteCard = reportAndSaveChanges(deck.deleteCard, deck);
-        const deleteCards = reportAndSaveChanges((keys) => { 
+        const deleteCards = reportAndSaveChanges((keys) => {
             keys.forEach((key) => deck.deleteCard(key));
         }, deck);
         const resetDeck = () => {
@@ -126,36 +125,36 @@ class Site extends React.Component {
     render() {
         const menuKeys = this.menuKeys;
         const navBar = <Menu mode="horizontal" style={{ height: "5%" }}
-                            onClick={this.selectMenuItem}
-                            selectedKeys={[this.state.selected]}>
-                            <Menu.Item id={menuKeys.review} key={menuKeys.review}><Icon type="home"></Icon>Review</Menu.Item>
-                            <Menu.Item id={menuKeys.manage} key={menuKeys.manage}><Icon type="edit"></Icon>Manage Deck</Menu.Item>
-                            <Menu.Item id={menuKeys.stats} key={menuKeys.stats} disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
-                            
-                            <Menu.Item id={menuKeys.login} key={menuKeys.login} style={ {float: "right"} }>
-                                <Icon type="login"></Icon>
-                                Log In
+            onClick={this.selectMenuItem}
+            selectedKeys={[this.state.selected]}>
+            <Menu.Item id={menuKeys.review} key={menuKeys.review}><Icon type="home"></Icon>Review</Menu.Item>
+            <Menu.Item id={menuKeys.manage} key={menuKeys.manage}><Icon type="edit"></Icon>Manage Deck</Menu.Item>
+            <Menu.Item id={menuKeys.stats} key={menuKeys.stats} disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
+
+            <Menu.Item id={menuKeys.login} key={menuKeys.login} style={{ float: "right" }}>
+                <Icon type="login"></Icon>
+                Log In
                             </Menu.Item>
-                            <Menu.Item id={menuKeys.tags} key={menuKeys.tags} style={ {float: "right"} }>
-                                <Icon type="setting"></Icon>
-                                Active Tags
+            <Menu.Item id={menuKeys.tags} key={menuKeys.tags} style={{ float: "right" }}>
+                <Icon type="setting"></Icon>
+                Active Tags
                             </Menu.Item>
-                        </Menu>
+        </Menu>
 
         let modal;
         switch (this.state.selected) {
             case menuKeys.tags:
-                modal = <TransferTagsModal 
-                            listOfTags={this.state.deck.getListOfTags()}
-                            closeModal={this.closeModal}
-                            rebuildActive={(activeTags) => { this.state.deck.rebuildActive(activeTags) }}
-                            changeCard={this.changeCard}
-                            visible={this.state.selected === menuKeys.tags}>
-                        </TransferTagsModal>
+                modal = <TransferTagsModal
+                    listOfTags={this.state.deck.getListOfTags()}
+                    closeModal={this.closeModal}
+                    rebuildActive={(activeTags) => { this.state.deck.rebuildActive(activeTags) }}
+                    changeCard={this.changeCard}
+                    visible={this.state.selected === menuKeys.tags}>
+                </TransferTagsModal>
                 break;
             case menuKeys.login:
                 modal = (
-                    <AuthenticationModal 
+                    <AuthenticationModal
                         closeModal={this.closeModal}
                         visible={this.state.selected === menuKeys.login}>
                     </AuthenticationModal>
@@ -164,19 +163,19 @@ class Site extends React.Component {
             case menuKeys.manage:
                 // Use this.activeMain so the modal persists over the active page.
                 this.activeMain = <ManageDeckPage visible={this.state.selected === menuKeys.manage}
-                                    listOfCards={ this.state.deck.getListOfCards() }
-                                    deckOps={this.deckOps}/>
+                    listOfCards={this.state.deck.getListOfCards()}
+                    deckOps={this.deckOps} />
                 break;
             case menuKeys.review:
                 this.activeMain = <div>
-                                <div style={{ marginTop: "1%" }}>
-                                    <header> Customized Study Session </header>
-                                </div>
-                                <FlashCardApp currentCard={this.state.currentCard}
-                                    changeCard={this.changeCard}
-                                    answering={this.state.selected === menuKeys.review}>
-                                </FlashCardApp>
-                            </div>
+                    <div style={{ marginTop: "1%" }}>
+                        <header> Customized Study Session </header>
+                    </div>
+                    <FlashCardApp currentCard={this.state.currentCard}
+                        changeCard={this.changeCard}
+                        answering={this.state.selected === menuKeys.review}>
+                    </FlashCardApp>
+                </div>
                 break;
             default:
                 break;
@@ -185,10 +184,10 @@ class Site extends React.Component {
         return (
             <Layout>
                 {navBar}
-                    <ErrorBoundary>
+                <ErrorBoundary>
                     {modal}
                     <Content>
-                    {this.activeMain}
+                        {this.activeMain}
                     </Content>
                 </ErrorBoundary>
             </Layout>

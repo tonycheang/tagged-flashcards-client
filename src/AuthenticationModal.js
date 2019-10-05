@@ -2,20 +2,11 @@ import React from 'react';
 import { Modal, Button, Form, Input, Icon, message, Tooltip } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 import './AuthenticationModal.css';
+import { dispatch } from './Dispatch';
 
 // Suppresses internal warnings in the dev console. (Since will warn after each key input).
 import Schema from 'async-validator';
 Schema.warning = function () { };
-
-async function dispatch(path, objectToStringify) {
-    return fetch(path,
-        {
-            method: "POST",
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(objectToStringify)
-        }
-    );
-}
 
 function withResponseHandlers(WrappedComponent) {
     return class extends React.Component {
@@ -86,7 +77,7 @@ class Login extends React.Component {
         const { onSuccess, onError, setLoading } = this.props;
         setLoading(true);
 
-        return dispatch("/auth/login", { username, password })
+        return dispatch("/auth/login", "POST", { username, password })
             .then(data => { onSuccess(data) })
             .catch(err => onError(err));
     }
@@ -183,7 +174,7 @@ class SignUp extends React.Component {
         const { onSuccess, onError, setLoading } = this.props;
         setLoading(true);
 
-        return dispatch("/auth/signup", { username, password, email })
+        return dispatch("/auth/signup", "POST", { username, password, email })
             .then(data => onSuccess(data))
             .catch(err => onError(err));
     }
