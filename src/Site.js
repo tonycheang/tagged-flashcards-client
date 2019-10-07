@@ -16,9 +16,6 @@ const { Content } = Layout;
 class Site extends React.Component {
     constructor(props) {
         super(props);
-        this.selectMenuItem = this.selectMenuItem.bind(this);
-        this.closeModal = this.closeModal.bind(this);
-        this.changeCard = this.changeCard.bind(this);
 
         const startingActive = [];
 
@@ -48,6 +45,7 @@ class Site extends React.Component {
             manage: "manage",
             stats: "stats",
             login: "login",
+            logout: "logout",
             tags: "tags",
         });
 
@@ -57,31 +55,60 @@ class Site extends React.Component {
             menuOpen: false,
             prevSelected: this.menuKeys.review,
             selected: this.menuKeys.review,
-            manageDeckChanged: false
+            manageDeckChanged: false,
+            isLoggedIn: false
         };
     }
 
-    componentDidMount() {
+    componentDidMount = () => {
         dispatchTries("/auth/refresh-session", "POST", {}, { maxTries: 3 })
-            .then(res => console.log(res))
-            .catch(e => console.log("Error in Site.js while attempting to refresh-session:", e));
+            .then(res => console.log(res) )
+            .catch(e => console.log("Error in Site.js while attempting to refresh-session:", e))
+            .finally(__ => this.setIsLoggedInFromCookies());
     }
 
-    closeModal() {
+    setIsLoggedInFromCookies = () => {
+        const previouslyLoggedIn = this.state.isLoggedIn;
+        const cookies = document.cookie.split(";");
+
+        let isLoggedInCookie;
+        if (cookies) isLoggedInCookie = cookies.filter(cookie => cookie.trim().startsWith("isLoggedIn="))[0];
+        
+        let isLoggedIn;
+        if (isLoggedInCookie) isLoggedIn = isLoggedInCookie.split('=')[1] === "true";
+
+        if (previouslyLoggedIn && !isLoggedIn) {
+            message.success("You have been logged out.");
+        }
+
+        this.setState({ isLoggedIn });
+    }
+
+    closeModal = () => {
         this.setState({ selected: this.state.prevSelected });
     }
 
-    selectMenuItem(event) {
-        // Navigation away from ManageDeckPage should rebuild the deck to accomodate changes.
-        if (this.state.selected === this.menuKeys.manage && this.state.manageDeckChanged) {
-            this.state.deck.rebuildActive();
-            this.setState({ currentCard: this.state.deck.getNextCard(), manageDeckChanged: false });
+    selectMenuItem = (event) => {
+        const { selected, manageDeckChanged, deck } = this.state;
+
+        if (event.key === this.menuKeys.logout) {
+            // Logging out shouldn't set the state.selected or state.prevSelected
+            return dispatchTries("/auth/logout", "POST", {}, { maxTries: 3 })
+            .then(res => console.log(res))
+            .catch(e => console.log("Error in Site.js while attempting to logout:", e))
+            .finally(__ => this.setIsLoggedInFromCookies());
         }
 
-        this.setState({ selected: event.key, prevSelected: this.state.selected });
+        // Navigation away from ManageDeckPage should rebuild the deck to accomodate changes.
+        if (selected === this.menuKeys.manage && manageDeckChanged) {
+            deck.rebuildActive();
+            this.setState({ currentCard: deck.getNextCard(), manageDeckChanged: false });
+        }
+
+        this.setState({ selected: event.key, prevSelected: selected });
     }
 
-    changeCard() {
+    changeCard = () => {
         this.setState({ currentCard: this.state.deck.getNextCard() });
     }
 
@@ -123,7 +150,23 @@ class Site extends React.Component {
     }
 
     render() {
+        const { isLoggedIn, selected } = this.state;
         const menuKeys = this.menuKeys;
+
+        const loginElement = (
+            <Menu.Item id={menuKeys.login} key={menuKeys.login} style={{ float: "right" }}>
+                <Icon type="login"></Icon>
+                Log In
+            </Menu.Item>
+        );
+
+        const logoutElement = (
+            <Menu.Item id={menuKeys.logout} key={menuKeys.logout} style={{ float: "right" }}>
+                <Icon type="logout"></Icon>
+                Log Out
+            </Menu.Item>
+        );
+
         const navBar = <Menu mode="horizontal" style={{ height: "5%" }}
             onClick={this.selectMenuItem}
             selectedKeys={[this.state.selected]}>
@@ -131,18 +174,16 @@ class Site extends React.Component {
             <Menu.Item id={menuKeys.manage} key={menuKeys.manage}><Icon type="edit"></Icon>Manage Deck</Menu.Item>
             <Menu.Item id={menuKeys.stats} key={menuKeys.stats} disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
 
-            <Menu.Item id={menuKeys.login} key={menuKeys.login} style={{ float: "right" }}>
-                <Icon type="login"></Icon>
-                Log In
-                            </Menu.Item>
+            { isLoggedIn ? logoutElement : loginElement }
+
             <Menu.Item id={menuKeys.tags} key={menuKeys.tags} style={{ float: "right" }}>
                 <Icon type="setting"></Icon>
                 Active Tags
-                            </Menu.Item>
+            </Menu.Item>
         </Menu>
 
         let modal;
-        switch (this.state.selected) {
+        switch (selected) {
             case menuKeys.tags:
                 modal = <TransferTagsModal
                     listOfTags={this.state.deck.getListOfTags()}
@@ -156,15 +197,20 @@ class Site extends React.Component {
                 modal = (
                     <AuthenticationModal
                         closeModal={this.closeModal}
+                        setIsLoggedInFromCookies={this.setIsLoggedInFromCookies}
                         visible={this.state.selected === menuKeys.login}>
                     </AuthenticationModal>
                 );
                 break;
             case menuKeys.manage:
                 // Use this.activeMain so the modal persists over the active page.
-                this.activeMain = <ManageDeckPage visible={this.state.selected === menuKeys.manage}
-                    listOfCards={this.state.deck.getListOfCards()}
-                    deckOps={this.deckOps} />
+                this.activeMain = (
+                    <ManageDeckPage 
+                        visible={this.state.selected === menuKeys.manage}
+                        isLoggedIn={isLoggedIn}
+                        listOfCards={this.state.deck.getListOfCards()}
+                        deckOps={this.deckOps} />
+                );
                 break;
             case menuKeys.review:
                 this.activeMain = <div>
