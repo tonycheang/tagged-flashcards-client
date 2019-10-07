@@ -1,6 +1,7 @@
 import React from 'react';
-import { Form, Input, message, Popconfirm, Table, Tag } from 'antd';
+import { Form, Input, Table, Tag } from 'antd';
 import { Card, Divider, Button, Icon } from 'antd';
+import { message, notification, Popconfirm } from 'antd';
 import EditableTagGroup from "./EditableTagGroup";
 import { FlashCard } from "./Deck";
 import Highlighter from 'react-highlight-words';
@@ -471,6 +472,20 @@ class ManageDeckPage extends React.Component {
         // Also allows EditableFormTable to wait for ManageDeckTable to pass the new list of cards.
         deckChanged: false
     };
+
+    componentDidMount = () => {
+        const { showNotification, reportNotificationShown } = this.props;
+
+        if (showNotification) {
+            notification["warning"]({
+                message: "You are not logged in.",
+                description: "Changes made will only be saved locally. \
+                              Log in or sign up to make sure changes save to your account.",
+                placement: "topRight"
+            });
+            reportNotificationShown();
+        }
+    }
 
     static getDerivedStateFromProps(props, state) {
         return { listOfCards: props.listOfCards };

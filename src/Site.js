@@ -58,6 +58,8 @@ class Site extends React.Component {
             manageDeckChanged: false,
             isLoggedIn: false
         };
+
+        this.firstVisitMDPWhileNotLoggedIn = true;
     }
 
     componentDidMount = () => {
@@ -79,6 +81,7 @@ class Site extends React.Component {
 
         if (previouslyLoggedIn && !isLoggedIn) {
             message.success("You have been logged out.");
+            this.firstVisitMDPWhileNotLoggedIn = true;
         }
 
         this.setState({ isLoggedIn });
@@ -207,7 +210,8 @@ class Site extends React.Component {
                 this.activeMain = (
                     <ManageDeckPage 
                         visible={this.state.selected === menuKeys.manage}
-                        isLoggedIn={isLoggedIn}
+                        showNotification={!isLoggedIn && this.firstVisitMDPWhileNotLoggedIn }
+                        reportNotificationShown={() => this.firstVisitMDPWhileNotLoggedIn = false }
                         listOfCards={this.state.deck.getListOfCards()}
                         deckOps={this.deckOps} />
                 );
