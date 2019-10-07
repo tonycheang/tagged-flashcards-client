@@ -80,7 +80,8 @@ class Login extends React.Component {
         return dispatchTries("/auth/login", "POST", { username, password })
             .then(data => { console.log(data); return data })
             .then(data => { onSuccess(data) })
-            .catch(err => onError(err));
+            .catch(err => onError(err))
+            .finally(__ => this.props.setIsLoggedInFromCookies());
     }
 
     render() {
@@ -178,7 +179,8 @@ class SignUp extends React.Component {
         return dispatchTries("/auth/signup", "POST", { username, password, email })
             .then(data => { console.log(data); return data })
             .then(data => onSuccess(data))
-            .catch(err => onError(err));
+            .catch(err => onError(err))
+            .finally(__ => this.props.setIsLoggedInFromCookies());
     }
 
     // Tooltips / feedback about form validation.
@@ -297,7 +299,7 @@ class AuthenticationModal extends React.Component {
         switch (intention) {
             case this.intentions.login:
                 activeForm = (
-                    <LoginForm closeModal={this.props.closeModal}
+                    <LoginForm {...this.props}
                         switchToSignup={
                             () => {
                                 this.setState({ intention: this.intentions.signup })
@@ -309,14 +311,14 @@ class AuthenticationModal extends React.Component {
                 break;
             case this.intentions.signup:
                 activeForm = (
-                    <SignUpForm closeModal={this.props.closeModal}
+                    <SignUpForm {...this.props}
                         switchToLogin={
                             () => {
                                 this.setState({ intention: this.intentions.login })
                             }
                         }>
                     </SignUpForm>
-                )
+                );
                 titleText = "Sign Up";
                 break;
             default:
