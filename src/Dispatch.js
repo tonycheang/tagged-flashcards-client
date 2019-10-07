@@ -51,6 +51,17 @@ async function dispatchTries(path, method, data, options) {
                 suggestedRedirect = {};
             }
 
+            /* No support for 300 error codes currently. */
+
+            // If no suggestion to redirect, simply exit.
+            if (mostRecentRes.status >= 400 && !mostRecentInfo.redirectURL) {
+                if (options.returnRequestPath)
+                    return { mostRecentInfo, mostRecentRes, requestPath, json: () => mostRecentInfo }; 
+                else
+                    return mostRecentInfo;
+            }
+
+            // Check for a suggested redirect. If so, take it on the next iteration.
             if (mostRecentInfo && mostRecentInfo.error && mostRecentInfo.redirectURL) {
                 suggestedRedirect.path = mostRecentInfo.redirectURL;
                 suggestedRedirect.data = mostRecentInfo.data;
@@ -62,7 +73,7 @@ async function dispatchTries(path, method, data, options) {
 
     const error = {
                     error: "MaximumDispatchesReached",
-                    message: `dispatchTries failed action after ${options.maxTries} times.`,
+                    message: `dispatchTries failed ${method} on ${path} after ${options.maxTries} times.`,
                     requestPath
                   }
     return error;
