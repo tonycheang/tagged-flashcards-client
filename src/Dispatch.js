@@ -19,33 +19,35 @@ async function dispatch(path, method, objectToStringify) {
     );
 }
 
-async function dispatchTries(path, method, data, options) {
+async function dispatchWithRedirect(path, method, data, options) {
     options = options ? options : { };
     // By default, allow for a single redirect and a single retry of the original.
-    options.maxTries = options.maxTries ? options.maxTries : 3;
-    options.returnRequestPath = options.returnRequestPath ? options.returnRequestPath : true;
+    options.maxDepth = options.maxDepth ? options.maxDepth : 3;
+    options.returnResponsePath = options.returnResponsePath ? options.returnResponsePath : true;
 
     let originalIntent = { path, method, data };
     let suggestedRedirect = { };
-    let requestPath = [];
+    let responsePath = [];
 
-    for (let i = 0; i < options.maxTries; i++) {
+    for (let i = 0; i < options.maxDepth; i++) {
         try {
             const attemptPath = suggestedRedirect.path ? suggestedRedirect.path : originalIntent.path;
             const attemptData = suggestedRedirect.data ? suggestedRedirect.data : originalIntent.data;
             const attemptMethod = suggestedRedirect.method ? suggestedRedirect.method : originalIntent.method;
             
-            const mostRecentRes = await dispatch(attemptPath, attemptMethod, attemptData);
-            const mostRecentInfo = await mostRecentRes.json();
+            const latestRes = await dispatch(attemptPath, attemptMethod, attemptData);
+            const latestBody = await latestRes.json();
 
-            requestPath.push({ mostRecentRes, info: mostRecentInfo });
+            responsePath.push({ latestRes, body: latestBody });
             
-            if (mostRecentRes.status >= 200 && mostRecentRes.status < 300) {
+            if (latestRes.status >= 200 && latestRes.status < 300) {
                 if (attemptPath === originalIntent.path) {
-                    if (options.returnRequestPath)
-                        return { mostRecentInfo, mostRecentRes, requestPath, json: () => mostRecentInfo };
-                    else
-                        return mostRecentInfo;
+                    return { 
+                        body: latestBody, 
+                        response: latestRes, 
+                        responsePath: options.returnResponsePath ? responsePath : undefined, 
+                        json: () => latestBody 
+                    }
                 }
                 // Empty out suggestedRedirect.
                 suggestedRedirect = {};
@@ -54,17 +56,19 @@ async function dispatchTries(path, method, data, options) {
             /* No support for 300 error codes currently. */
 
             // If no suggestion to redirect, simply exit.
-            if (mostRecentRes.status >= 400 && !mostRecentInfo.redirectURL) {
-                if (options.returnRequestPath)
-                    return { mostRecentInfo, mostRecentRes, requestPath, json: () => mostRecentInfo }; 
-                else
-                    return mostRecentInfo;
+            if (latestRes.status >= 400 && !latestBody.redirectURL) {
+                return { 
+                    body: latestBody, 
+                    response: latestRes, 
+                    responsePath: options.returnResponsePath ? responsePath : undefined, 
+                    json: () => latestBody 
+                }
             }
 
             // Check for a suggested redirect. If so, take it on the next iteration.
-            if (mostRecentInfo && mostRecentInfo.error && mostRecentInfo.redirectURL) {
-                suggestedRedirect.path = mostRecentInfo.redirectURL;
-                suggestedRedirect.data = mostRecentInfo.data;
+            if (latestBody && latestBody.error && latestBody.redirectURL) {
+                suggestedRedirect.path = latestBody.redirectURL;
+                suggestedRedirect.data = latestBody.data;
             }
         } catch (err) {
             throw err;
@@ -73,12 +77,12 @@ async function dispatchTries(path, method, data, options) {
 
     const error = {
                     error: "MaximumDispatchesReached",
-                    message: `dispatchTries failed ${method} on ${path} after ${options.maxTries} times.`,
-                    requestPath
+                    message: `dispatchTries failed ${method} on ${path} after ${options.maxDepth} times.`,
+                    responsePath
                   }
     return error;
 }
 
-// dispatchTries("/api/get-deck", "POST", {}, { returnRequestPath: true }).then(res => console.log(res));
+// dispatchTries("/api/get-deck", "POST", {}, { returnresponsePath: true }).then(res => console.log(res));
 
-export { dispatch, dispatchTries };
+export { dispatch, dispatchWithRedirect };
