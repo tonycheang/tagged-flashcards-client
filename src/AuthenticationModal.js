@@ -81,7 +81,7 @@ class Login extends React.Component {
             .then(data => { console.log(data); return data })
             .then(data => { onSuccess(data) })
             .catch(err => onError(err))
-            .finally(__ => this.props.setIsLoggedInFromCookies());
+            .finally(__ => this.props.loadDeck());
     }
 
     render() {
@@ -180,7 +180,7 @@ class SignUp extends React.Component {
             .then(data => { console.log(data); return data })
             .then(data => onSuccess(data))
             .catch(err => onError(err))
-            .finally(__ => this.props.setIsLoggedInFromCookies());
+            .finally(__ => this.props.saveDeck());
     }
 
     // Tooltips / feedback about form validation.

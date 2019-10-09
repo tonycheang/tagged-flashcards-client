@@ -1,5 +1,4 @@
 import React from 'react';
-import { buildDefaultDeck } from './Deck';
 import { Icon, Menu, Layout, Spin, message } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 
@@ -17,11 +16,6 @@ const { Content } = Layout;
 class Site extends React.Component {
     constructor(props) {
         super(props);
-
-        DeckController.load().then(res => {
-            const deck = res.data;
-            this.setState({ deck, currentCard: deck.getNextCard(), loading: false });
-        });
 
         // Enum helps with iterating through testing
         this.menuKeys = Object.freeze({
@@ -52,10 +46,54 @@ class Site extends React.Component {
     /* --- Pulling from Server --- */
 
     componentDidMount = () => {
-        dispatchWithRedirect("/auth/refresh-session", "POST", {}, { maxDepth: 3 })
+        dispatchWithRedirect("/auth/refresh-session", "POST", {})
             .then(res => console.log(res) )
             .catch(e => console.log("Error in Site.js while attempting to refresh-session:", e))
-            .finally(__ => this.setIsLoggedInFromCookies());
+            .finally(__ => this.loadDeck());
+    }
+
+    saveDeck = () => {
+        const { deck } = this.state;
+        DeckController.save(deck).then(res => {
+            this.setState({ isLoggedIn: res.isLoggedIn });
+            if (res.remoteFailed)
+                message.warning("Attempt to save to remote failed.")
+        }).catch(e => console.log(e));
+    }
+
+    loadDeck = () => {
+        DeckController.load().then(res => {
+            const deck = res.data;
+
+            this.setState({ 
+                deck, 
+                currentCard: deck.getNextCard(), 
+                loading: false, 
+                isLoggedIn: res.isLoggedIn 
+            });
+            
+            let notif;
+            switch (res.source) {
+                case "local":
+                    notif = "Loaded locally saved deck.";
+                    break;
+                case "remote":
+                    notif = "Loaded deck from account.";
+                    break;
+                case "default":
+                    notif = "Loaded default deck and settings";
+                    break;
+                default:
+                    throw Error("Unexpected source.");
+            }
+
+            message.destroy();
+            if (res.remoteFailed)
+                message.warning("Attempt to load from remote failed. " + notif)
+            else
+                message.success(notif);
+
+        }).catch(e => console.log(e));
     }
 
     setIsLoggedInFromCookies = () => {
@@ -113,7 +151,11 @@ class Site extends React.Component {
         const reportAndSaveChanges = (func, toSaveDeck) => {
             return (...args) => {
                 func(...args);
+                // Always rebuildActive
+                toSaveDeck.rebuildActive();
+                
                 this.setState({ manageDeckChanged: true });
+                
                 DeckController.save(toSaveDeck).then(
                     res => {
                         if (res.remoteFailed)
@@ -149,7 +191,7 @@ class Site extends React.Component {
     }
 
     render() {
-        const { isLoggedIn, selected, loading } = this.state;
+        const { isLoggedIn, deck, currentCard, selected, loading } = this.state;
         const menuKeys = this.menuKeys;
 
         const loginElement = (
@@ -168,7 +210,7 @@ class Site extends React.Component {
 
         const navBar = <Menu mode="horizontal" style={{ height: "5%" }}
             onClick={this.selectMenuItem}
-            selectedKeys={[this.state.selected]}>
+            selectedKeys={[selected]}>
             <Menu.Item id={menuKeys.review} key={menuKeys.review}><Icon type="home"></Icon>Review</Menu.Item>
             <Menu.Item id={menuKeys.manage} key={menuKeys.manage}><Icon type="edit"></Icon>Manage Deck</Menu.Item>
             <Menu.Item id={menuKeys.stats} key={menuKeys.stats} disabled><Icon type="line-chart"></Icon>Stats</Menu.Item>
@@ -185,19 +227,20 @@ class Site extends React.Component {
         switch (selected) {
             case menuKeys.tags:
                 modal = <TransferTagsModal
-                    listOfTags={this.state.deck.getListOfTags()}
+                    listOfTags={deck.getListOfTags()}
                     closeModal={this.closeModal}
-                    rebuildActive={(activeTags) => { this.state.deck.rebuildActive(activeTags) }}
+                    rebuildActive={(activeTags) => { deck.rebuildActive(activeTags) }}
                     changeCard={this.changeCard}
-                    visible={this.state.selected === menuKeys.tags}>
+                    visible={selected === menuKeys.tags}>
                 </TransferTagsModal>
                 break;
             case menuKeys.login:
                 modal = (
                     <AuthenticationModal
                         closeModal={this.closeModal}
-                        setIsLoggedInFromCookies={this.setIsLoggedInFromCookies}
-                        visible={this.state.selected === menuKeys.login}>
+                        loadDeck={this.loadDeck}
+                        saveDeck={this.saveDeck}
+                        visible={selected === menuKeys.login}>
                     </AuthenticationModal>
                 );
                 break;
@@ -205,10 +248,11 @@ class Site extends React.Component {
                 // Use this.activeMain so the modal persists over the active page.
                 this.activeMain = (
                     <ManageDeckPage 
-                        visible={this.state.selected === menuKeys.manage}
+                        visible={selected === menuKeys.manage}
+                        isLoggedIn={isLoggedIn}
                         showNotification={!isLoggedIn && this.firstVisitMDPWhileNotLoggedIn }
                         reportNotificationShown={() => this.firstVisitMDPWhileNotLoggedIn = false }
-                        listOfCards={this.state.deck.getListOfCards()}
+                        listOfCards={deck.getListOfCards()}
                         deckOps={this.deckOps} />
                 );
                 break;
@@ -217,9 +261,9 @@ class Site extends React.Component {
                     <div style={{ marginTop: "1%" }}>
                         <header> Customized Study Session </header>
                     </div>
-                    <FlashCardApp currentCard={this.state.currentCard}
+                    <FlashCardApp currentCard={currentCard}
                         changeCard={this.changeCard}
-                        answering={this.state.selected === menuKeys.review}>
+                        answering={selected === menuKeys.review}>
                     </FlashCardApp>
                 </div>
                 break;
