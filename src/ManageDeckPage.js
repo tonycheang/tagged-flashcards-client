@@ -21,9 +21,9 @@ class EditableCell extends React.Component {
         let cellToRender;
 
         if (editing) {
-            cellToRender = <Form.Item style={{margin: 0}}>
-                                {getFieldDecorator(dataIndex, {initialValue: record[dataIndex]})(<Input/>)}
-                            </Form.Item>
+            cellToRender = <Form.Item style={{ margin: 0 }}>
+                {getFieldDecorator(dataIndex, { initialValue: record[dataIndex] })(<Input />)}
+            </Form.Item>
         } else {
             cellToRender = children;
         }
@@ -129,7 +129,7 @@ export class EditableTable extends React.Component {
                 this.setState({ selectedRowKeys: data.map((card) => card.key) });
                 message.info(`Selected ${data.length} cards across pages.`);
             } else if (this.selectAllMode === "page-data") {
-                this.setState({ selectedRowKeys: selectedRows.map((card)=> card.key) });
+                this.setState({ selectedRowKeys: selectedRows.map((card) => card.key) });
                 message.info(`Selected ${selectedRows.length} cards from this page.`);
             } else {
                 throw Error("Assertion Error: invalid state for EdtiableTable selectAllMode");
@@ -140,7 +140,7 @@ export class EditableTable extends React.Component {
                 message.info("Deselected all cards.")
             } else if (this.selectAllMode === "page-data") {
                 // deselect only the current page, even if selected all in a previous step
-                const selectedRowKeys = selectedRows.map((card)=> card.key);
+                const selectedRowKeys = selectedRows.map((card) => card.key);
                 this.setState({ selectedRowKeys });
                 if (selectedRowKeys.length > 0) {
                     message.info(`Deselected page. ${selectedRowKeys.length} cards still selected.`)
@@ -243,11 +243,11 @@ export class EditableTable extends React.Component {
 
     setColumns = () => {
         const renderHighlighter = (text) => {
-            return <Highlighter 
+            return <Highlighter
                 highlightStyle={{ backgroundColor: '#ffc069', padding: 0 }}
                 searchWords={[this.state.searchInput]}
                 autoEscape
-                textToHighlight={text.toString()}/>
+                textToHighlight={text.toString()} />
         }
         this.tagsColumnIndex = 2;
         this.columns = [
@@ -283,14 +283,14 @@ export class EditableTable extends React.Component {
                 key: "tags",
                 filters: this.props.deckOps
                     .getListOfTags()
-                    .map((tag) => { return {text: tag, value: tag} })
+                    .map((tag) => { return { text: tag, value: tag } })
                     .sort((textValA, textValB) => textValA.text.localeCompare(textValB.text)),
                 render: (text, record, dataIndex) => {
                     const editable = this.isEditing(record);
 
                     if (editable) {
-                        return <EditableTagGroup tags={this.state.rowTags} 
-                                    setTags={ (rowTags) => { this.setState({ rowTags }) } }/>
+                        return <EditableTagGroup tags={this.state.rowTags}
+                            setTags={(rowTags) => { this.setState({ rowTags }) }} />
                     } else {
                         if (record.tags)
                             return record.tags.map((tag, i) => <Tag key={i}>{tag}</Tag>);
@@ -316,8 +316,8 @@ export class EditableTable extends React.Component {
                                     {
                                         (form) => {
                                             return <Button size="small" type="link"
-                                                    onClick={() => { this.save(form, record.key) }}>
-                                                    Save
+                                                onClick={() => { this.save(form, record.key) }}>
+                                                Save
                                                 </Button>
                                         }
                                     }
@@ -362,20 +362,20 @@ export class EditableTable extends React.Component {
                 const deleteText = `Delete ${selectedRowKeys.length} Selected?`;
                 deleteOrResetButton = (
                     <Popconfirm title={deleteText} okType="primary" okText="Delete"
-                                onConfirm={this.deleteSelectedRows}
-                                disabled={selectedRowKeys.length === 0}>
-                            <Button 
-                                ghost type="danger" 
-                                disabled={selectedRowKeys.length === 0}>
-                                <Icon type="minus" />
-                                Delete
+                        onConfirm={this.deleteSelectedRows}
+                        disabled={selectedRowKeys.length === 0}>
+                        <Button
+                            ghost type="danger"
+                            disabled={selectedRowKeys.length === 0}>
+                            <Icon type="minus" />
+                            Delete
                             </Button>
                     </Popconfirm>
                 )
             } else {
                 deleteOrResetButton = (
                     <Button onClick={this.props.deckOps.resetDeck}>
-                        <Icon type="rollback"/>
+                        <Icon type="rollback" />
                         Default
                     </Button>
                 )
@@ -390,7 +390,7 @@ export class EditableTable extends React.Component {
                         {deleteOrResetButton}
                     </div>
                     <Button ghost type="primary"
-                        onClick={this.makeNewRow} 
+                        onClick={this.makeNewRow}
                         disabled={this.state.editingKey !== ''}>
                         <Icon type="plus" />
                         New Card
@@ -403,8 +403,8 @@ export class EditableTable extends React.Component {
 
         const components = { body: { cell: EditableCell } };
         sortedInfo = sortedInfo || {};
-        const rowSelection = { 
-            selectedRowKeys, 
+        const rowSelection = {
+            selectedRowKeys,
             onChange: this.onSelectChange,
             onSelectAll: this.onSelectAll,
             hideDefaultSelections: true,
@@ -454,7 +454,7 @@ export class EditableTable extends React.Component {
                 rowSelection={rowSelection}
                 dataSource={data}
                 columns={columns}
-                pagination={{ onChange: this.cancel, current: this.state.currentPage }} 
+                pagination={{ onChange: this.cancel, current: this.state.currentPage }}
                 title={renderTableHeader}
                 bordered />
         </EditableContext.Provider>
@@ -470,7 +470,8 @@ class ManageDeckPage extends React.Component {
         // deckChanged used to determine if EditableFormTable should re-filter.
         // Done here to easily attach to deckOps, if not the most elegant solution.
         // Also allows EditableFormTable to wait for ManageDeckTable to pass the new list of cards.
-        deckChanged: false
+        deckChanged: false,
+        childrenKey: 0
     };
 
     componentDidMount = () => {
@@ -479,12 +480,25 @@ class ManageDeckPage extends React.Component {
         if (showNotification) {
             notification["warning"]({
                 message: "You are not logged in.",
-                description: "Changes made will only be saved locally. \
-                              Log in or sign up to make sure changes save to your account.",
+                description: "Changes made will only be saved locally. Log in or sign up to make sure changes save to your account.",
                 placement: "topRight"
             });
             reportNotificationShown();
         }
+    }
+
+    shouldComponentUpdate = (nextProps, nextState) => {
+        const wasLoggedIn = this.props.isLoggedIn;
+        const isNowLoggedIn = nextProps.isLoggedIn;
+        const { childrenKey } = this.state;
+
+        if (!wasLoggedIn && isNowLoggedIn) {
+            // Updating childrenKey will rerender the entire component
+            // Desireable to ensure EditableFormTable resets completely: filters, cards, and all.
+            this.setState({ childrenKey: childrenKey + 1 });
+            return false;
+        }
+        return true;
     }
 
     static getDerivedStateFromProps(props, state) {
@@ -522,13 +536,16 @@ class ManageDeckPage extends React.Component {
     }
 
     render() {
+        const { childrenKey, listOfCards, deckChanged } = this.state;
+
         return (
             <ErrorBoundary>
-                <Card style={{margin: "1.5% 5% 2% 5%"}}>
-                    <EditableFormTable dataSource={this.state.listOfCards} 
+                <Card style={{ margin: "1.5% 5% 2% 5%" }}>
+                    <EditableFormTable key={childrenKey}
+                        dataSource={listOfCards}
                         reportDealtWithChange={this.reportDealtWithChange}
-                        deckChanged={this.state.deckChanged}
-                        deckOps={this.deckOps}/>
+                        deckChanged={deckChanged}
+                        deckOps={this.deckOps} />
                 </Card>
             </ErrorBoundary>
         )
