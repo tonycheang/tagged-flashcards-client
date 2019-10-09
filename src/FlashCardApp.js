@@ -64,7 +64,8 @@ class FlashCardApp extends React.Component {
 
     // this.setState({ justRevealed: true, typed: this.props.currentCard.back });
     this.setState({ justRevealed: true });
-    this.props.form.setFieldsValue({ typed: this.props.currentCard.back });
+    if (this.props.currentCard)
+      this.props.form.setFieldsValue({ typed: this.props.currentCard.back });
   }
 
   reportCorrectness() {
