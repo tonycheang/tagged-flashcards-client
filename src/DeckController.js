@@ -26,7 +26,7 @@ async function loadRemote() {
         const res = await dispatchWithRedirect("/api/get-deck", "POST", {});
 
         if (res && res.body && res.body.data)
-            data = res.body.data;
+            data = Deck.buildFromJSON(res.body.data);
 
         if (res && res.error)
             throw Error(res.error);
@@ -63,7 +63,7 @@ function loadLocal() {
 
 async function load() {
     const isLoggedIn = getLoggedInStatus();
-    const response = { source: undefined, data: undefined, remoteFailed: false };
+    const response = { source: undefined, data: undefined, remoteFailed: false, isLoggedIn };
 
     // Should try to pull from server if the user is logged in.
     if (isLoggedIn) {
@@ -72,6 +72,7 @@ async function load() {
             response.source = "remote";
             if (!response.data)
                 throw Error("Failed to load data from remote.");
+            saveLocally(response.data);
         } catch (err) {
             console.log(err);
             response.remoteFailed = true;
@@ -94,15 +95,19 @@ async function load() {
     return response;
 }
 
+function saveLocally(data) {
+    localStorage.setItem("savedDeck", JSON.stringify(data));
+}
+
 async function save(data) {
     const isLoggedIn = getLoggedInStatus();
-    const response = { destination: undefined, remoteFailed: false}
+    const response = { destination: undefined, remoteFailed: false, isLoggedIn };
 
     if (isLoggedIn) {
         try {
-            const res = await dispatchWithRedirect("/api/update-deck", "POST", data);
-            if (res && res.error)
-                throw Error(res.error);
+            const res = await dispatchWithRedirect("/api/update-deck", "POST", { data });
+            if (res && res.body && res.body.error)
+                throw Error(res.body.error + " " + res.body.message);
             
             if (res && res.response && res.response.status >= 300)
                 throw Error("Failed to save data to remote.");
@@ -115,7 +120,7 @@ async function save(data) {
     }
 
     // Always save locally.
-    localStorage.setItem("savedDeck", JSON.stringify(data));
+    saveLocally(data);
 
     return response;
 }
