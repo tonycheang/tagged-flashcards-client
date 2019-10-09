@@ -1,6 +1,6 @@
 import React from 'react';
-import { buildDefaultDeck, Deck } from './Deck';
-import { Icon, Menu, Layout, message } from "antd";
+import { buildDefaultDeck } from './Deck';
+import { Icon, Menu, Layout, Spin, message } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 
 import FlashCardApp from './FlashCardApp';
@@ -9,7 +9,8 @@ import TransferTagsModal from './TransferTagsModal';
 import AuthenticationModal from './AuthenticationModal';
 import "./Site.css";
 
-import { dispatchTries } from './Dispatch';
+import { dispatchWithRedirect } from './Dispatch';
+import DeckController from './DeckController';
 
 const { Content } = Layout;
 
@@ -17,27 +18,10 @@ class Site extends React.Component {
     constructor(props) {
         super(props);
 
-        const startingActive = [];
-
-        // Load existing values if they're there.
-        const savedSettings = JSON.parse(localStorage.getItem("activeTags"));
-
-        if (savedSettings) {
-            Object.entries(savedSettings).forEach(([tag, active]) => {
-                if (active)
-                    startingActive.push(tag);
-            });
-        } else {
-            // Otherwise, default to having basic hiragana
-            startingActive.push("basic hiragana");
-            localStorage.setItem("activeTags", JSON.stringify({ "basic hiragana": true }));
-            message.success("Loaded default settings!");
-        }
-
-        const savedDeckJSON = localStorage.getItem("savedDeck");
-        const deck = savedDeckJSON ? Deck.buildFromJSON(savedDeckJSON) : buildDefaultDeck();
-        // Since we do not serialize deck into savedDeck in TagsModal, we need to pull settings and rebuild.
-        if (savedDeckJSON) deck.rebuildActive(startingActive);
+        DeckController.load().then(res => {
+            const deck = res.data;
+            this.setState({ deck, currentCard: deck.getNextCard(), loading: false });
+        });
 
         // Enum helps with iterating through testing
         this.menuKeys = Object.freeze({
@@ -50,8 +34,11 @@ class Site extends React.Component {
         });
 
         this.state = {
-            deck,
-            currentCard: deck.getNextCard(),
+            // Set by async DeckController.load()
+            deck: undefined,
+            currentCard: undefined,
+            loading: true,
+
             menuOpen: false,
             prevSelected: this.menuKeys.review,
             selected: this.menuKeys.review,
@@ -62,8 +49,10 @@ class Site extends React.Component {
         this.firstVisitMDPWhileNotLoggedIn = true;
     }
 
+    /* --- Pulling from Server --- */
+
     componentDidMount = () => {
-        dispatchTries("/auth/refresh-session", "POST", {}, { maxTries: 3 })
+        dispatchWithRedirect("/auth/refresh-session", "POST", {}, { maxDepth: 3 })
             .then(res => console.log(res) )
             .catch(e => console.log("Error in Site.js while attempting to refresh-session:", e))
             .finally(__ => this.setIsLoggedInFromCookies());
@@ -87,6 +76,8 @@ class Site extends React.Component {
         this.setState({ isLoggedIn });
     }
 
+    /* --- Menu Related --- */
+
     closeModal = () => {
         this.setState({ selected: this.state.prevSelected });
     }
@@ -96,10 +87,10 @@ class Site extends React.Component {
 
         if (event.key === this.menuKeys.logout) {
             // Logging out shouldn't set the state.selected or state.prevSelected
-            return dispatchTries("/auth/logout", "POST", {}, { maxTries: 3 })
-            .then(res => console.log(res))
-            .catch(e => console.log("Error in Site.js while attempting to logout:", e))
-            .finally(__ => this.setIsLoggedInFromCookies());
+            return dispatchWithRedirect("/auth/logout", "POST", {}, { maxDepth: 3 })
+                .then(res => console.log(res))
+                .catch(e => console.log("Error in Site.js while attempting to logout:", e))
+                .finally(__ => this.setIsLoggedInFromCookies());
         }
 
         // Navigation away from ManageDeckPage should rebuild the deck to accomodate changes.
@@ -111,6 +102,8 @@ class Site extends React.Component {
         this.setState({ selected: event.key, prevSelected: selected });
     }
 
+    /* --- Deck Related --- */
+
     changeCard = () => {
         this.setState({ currentCard: this.state.deck.getNextCard() });
     }
@@ -121,7 +114,12 @@ class Site extends React.Component {
             return (...args) => {
                 func(...args);
                 this.setState({ manageDeckChanged: true });
-                localStorage.setItem("savedDeck", JSON.stringify(toSaveDeck));
+                DeckController.save(toSaveDeck).then(
+                    res => {
+                        if (res.remoteFailed)
+                            message.warning("Saving to remote failed. Saved locally.");
+                    }
+                ).catch(e => console.log(e));
             }
         }
 
@@ -134,12 +132,10 @@ class Site extends React.Component {
         const resetDeck = () => {
             // Not using HoF above since building a default deck rebuilds active anyway.
             // Better for testing.
-            const defaultDeck = buildDefaultDeck();
+            const defaultDeck = DeckController.reset();
             this.setState({ deck: defaultDeck, currentCard: defaultDeck.getNextCard() });
             message.destroy();
             message.success("Reset to default deck.");
-            localStorage.setItem("activeTags", JSON.stringify({ "basic hiragana": true }));
-            localStorage.setItem("savedDeck", JSON.stringify(defaultDeck));
         };
 
         return {
@@ -153,7 +149,7 @@ class Site extends React.Component {
     }
 
     render() {
-        const { isLoggedIn, selected } = this.state;
+        const { isLoggedIn, selected, loading } = this.state;
         const menuKeys = this.menuKeys;
 
         const loginElement = (
@@ -235,10 +231,12 @@ class Site extends React.Component {
             <Layout>
                 {navBar}
                 <ErrorBoundary>
-                    {modal}
-                    <Content>
-                        {this.activeMain}
-                    </Content>
+                    <Spin spinning={loading}>
+                        {modal}
+                        <Content>
+                            {this.activeMain}
+                        </Content>
+                    </Spin>
                 </ErrorBoundary>
             </Layout>
         )
