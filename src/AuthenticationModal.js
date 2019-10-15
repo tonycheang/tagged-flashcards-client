@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Button, Form, Input, Icon, message, Tooltip } from "antd";
+import { Modal, Button, Form, Input, Progress, Icon, message, Tooltip } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 import './AuthenticationModal.css';
 import { dispatchWithRedirect } from './Dispatch';
@@ -8,80 +8,87 @@ import { dispatchWithRedirect } from './Dispatch';
 import Schema from 'async-validator';
 Schema.warning = function () { };
 
-function withResponseHandlers(WrappedComponent) {
-    return class extends React.Component {
-        state = {
-            loading: false,
-            error: false,
-            errorMessage: ""
-        }
+const { confirm } = Modal;
 
-        onSuccess = async (response) => {
-            this.setState({ loading: false });
-            const body = await response.json();
-            const SECONDS_TILL_CLOSE = 2.5;
+function configureNext_(path, handlers) {
+    /* 
+        Function to be configured, then bound by components. 
 
-            if (response.status >= 400) {
-                message.destroy();
-                message.error(body.error, SECONDS_TILL_CLOSE);
-                // These state variables are passed down as props.
-                this.setState({ error: true, errorMessage: body.error });
-            } else {
-                message.destroy();
-                message.success(body.message, SECONDS_TILL_CLOSE);
-                this.props.closeModal();
-            }
-        }
+        antd's validateFields needs the proper ref to a form component
+        This function allows 'layering' of path and handlers higher up;
+        the binding of 'this' in Form.create() components will allow
+        validateFields to work properly.
+    */
 
-        onError = (err) => {
-            this.setState({ loading: false });
+
+    return async function next_(event) {
+
+        function defaultErrorHandler(err) {
+            this.props.setLoading(false);
             message.error("Opps! Something went wrong.");
         }
 
-        render() {
-            const { error, errorMessage, loading } = this.state;
-            return (
-                <WrappedComponent
-                    loading={loading}
-                    error={error}
-                    errorMessage={errorMessage}
-                    setLoading={(loading) => { this.setState({ loading }) }}
-                    onSuccess={this.onSuccess}
-                    onError={this.onError}
-                    {...this.props}>
-                </WrappedComponent>
-            );
-        }
-    }
-}
-
-class Login extends React.Component {
-
-    login = async (event) => {
         event.preventDefault();
 
-        // validateFields eats throw errors in the callback.
-        // using "flag" errObj to save info about error instead.
-        let username, password, errObj;
+        // validateFields eats thrown errors in the callback.
+        // Use "flag" errObj to save info about error instead.
+        let objToSend;
+        let errObj;
         this.props.form.validateFields((err, vals) => {
             if (err) {
                 errObj = err;
                 return;
             }
-            username = vals.username;
-            password = vals.password;
+
+            objToSend = vals;
         });
 
         if (errObj) return;
 
-        const { onSuccess, onError, setLoading } = this.props;
-        setLoading(true);
+        const { signUpToken } = this.props;
+        if (signUpToken)
+            objToSend['signUpToken'] = signUpToken;
 
-        return dispatchWithRedirect("/auth/login", "POST", { username, password })
-            .then(data => { console.log(data); return data })
-            .then(data => { onSuccess(data) })
-            .catch(err => onError(err))
-            .finally(__ => this.props.loadDeck());
+        this.props.setLoading(true);
+
+        return dispatchWithRedirect(path, "POST", objToSend)
+            .then(data => handlers.onSuccess ? handlers.onSuccess(data) : console.log(data))
+            .catch(err => handlers.onError ? handlers.onError(err) : defaultErrorHandler.call(this, err))
+            .finally(__ => handlers.finally ? handlers.finally() : undefined);
+    }
+}
+
+class Login extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            loading: false,
+            error: false,
+            errorMessage: ""
+        }
+        const handlers = {
+            onSuccess: this.onSuccess,
+            finally: this.props.loadDeck
+        }
+        this.login = configureNext_("/auth/login", handlers).bind(this);
+    }
+
+    onSuccess = async (response) => {
+        this.setState({ loading: false });
+        const body = await response.json();
+        const SECONDS_TILL_CLOSE = 2.5;
+
+        if (response.status >= 400) {
+            message.destroy();
+            message.error(body.error, SECONDS_TILL_CLOSE);
+            // These state variables are passed down as props.
+            this.setState({ error: true, errorMessage: body.error });
+        } else {
+            message.destroy();
+            message.success(body.message, SECONDS_TILL_CLOSE);
+            this.props.closeModal();
+        }
     }
 
     render() {
@@ -133,89 +140,159 @@ class Login extends React.Component {
     }
 }
 
+/* ----- SIGN UP ----- */
+
+// Function to be bound by SignUpStage components.
+function onBlur(event) {
+    const fieldName = event.target.id.split("_")[1];
+    this.props.form.validateFields([fieldName], (err, vals) => {
+        // If there's an error when the user changes fields,
+        // The next time it should validate as it goes, not after blur.
+        // This provides immediate feedback that the user has entered the correct format.
+        const { fieldValidationTriggers } = this.state;
+        fieldValidationTriggers[fieldName] = err ? "onChange" : "onBlur";
+        this.setState({ fieldValidationTriggers });
+    });
+}
+
 class SignUp extends React.Component {
-    state = {
-        fieldValidationTriggers: {
-            username: "onBlur",
-            email: "onBlur",
-            password: "onBlur"
+    constructor(props) {
+        super(props);
+        this.state = {
+            signUpStage: 1,
+            signUpToken: undefined,
+            loading: false
+        }
+        
+        const handlersWithLoad = {
+            onSuccess: this.onSuccess,
+            finally: this.props.saveDeck
+        }
+        const handlersWithoutLoad = {
+            onSuccess: this.onSuccess
+        }
+        this.unboundNext_LoadDeck = configureNext_("/auth/signup", handlersWithLoad)
+        this.unboundNext_WithoutLoad = configureNext_("/auth/signup", handlersWithoutLoad);
+    }
+
+    onSuccess = (data) => {
+        this.setState({ loading: false });
+
+        if (data.error || data.response.status >= 300) {
+            console.log(data);
+            return message.warn("Opps, something went wrong!");
+        }
+
+        if (data.response && data.response.status < 300 && data.response.status >= 200) {
+            const { signUpStage } = this.state;
+            switch (signUpStage) {
+                case 1:
+                    if (!data.body || !data.body.signUpToken)
+                        return message.warn("Opps! Server did not pass a token. Please retry.");
+
+                    this.setState({ signUpStage: 2, signUpToken: data.body.signUpToken });
+                    this.props.setShouldWarnBeforeModalClose(true);
+                    break;
+                case 2:
+                    if (!data.body || !data.body.signUpToken)
+                        return message.warn("Opps! Server did not pass a token. Please retry.");
+
+                    this.setState({ signUpStage: 3, signUpToken: data.body.signUpToken });
+                    break;
+                case 3:
+                    const MESSAGE_ACTIVE_TIME = 2.5;
+                    message.success("Signed up successfully! Automatically logged in.", MESSAGE_ACTIVE_TIME);
+                    this.props.closeModal();
+                    break;
+                default:
+                    throw Error("Invalid sign up stage.");
+            }
         }
     }
 
-    onBlur = (event) => {
-        const fieldName = event.target.id.split("_")[1];
-        this.props.form.validateFields([fieldName], (err, vals) => {
-            // If there's an error when the user changes fields,
-            // The next time it should validate as it goes, not after blur.
-            // This provides immediate feedback that the user has entered the correct format.
-            const { fieldValidationTriggers } = this.state;
-            fieldValidationTriggers[fieldName] = err ? "onChange" : "onBlur";
-            this.setState({ fieldValidationTriggers });
-        });
+    switchToStageOne = () => {
+        this.setShouldWarnBeforeModalClose(true);
+        this.setState({ signUpStage: 1 });
     }
 
-    signup = async (event) => {
-        event.preventDefault();
-
-        // validateFields eats throw errors in the callback.
-        // using "flag" errObj to save info about error instead.
-        let username, password, email, errObj;
-        this.props.form.validateFields((err, vals) => {
-            if (err) {
-                errObj = err;
-                return;
-            }
-
-            username = vals.username;
-            password = vals.password;
-            email = vals.email;
-        });
-
-        if (errObj) return;
-
-        const { onSuccess, onError, setLoading } = this.props;
-        setLoading(true);
-
-        return dispatchWithRedirect("/auth/signup", "POST", { username, password, email })
-            .then(data => { console.log(data); return data })
-            .then(data => onSuccess(data))
-            .catch(err => onError(err))
-            .finally(__ => this.props.saveDeck());
+    setLoading = (bool) => {
+        this.setState({ loading: bool });
     }
 
-    // Tooltips / feedback about form validation.
     render() {
-        const { getFieldDecorator } = this.props.form;
-        const { switchToLogin, loading } = this.props;
-        const { fieldValidationTriggers } = this.state;
+        const { switchToLogin } = this.props;
+        const { signUpStage, signUpToken, loading } = this.state;
 
-        const tooltipProps = { placement: "right", trigger: "focus", hasFeedback: true };
+        let stageFormComponent, progressPercent;
+        switch (signUpStage) {
+            case 1:
+                stageFormComponent = (
+                    <EmailAuthStageOneForm
+                        switchToLogin={switchToLogin}
+                        setLoading={this.setLoading}
+                        loading={loading}
+                        unboundNext_={this.unboundNext_WithoutLoad}>
+                    </EmailAuthStageOneForm>
+                );
+                progressPercent = 0;
+                break;
+            case 2:
+                stageFormComponent = (
+                    <EmailAuthStageTwoForm
+                        signUpToken={signUpToken}
+                        setLoading={this.setLoading}
+                        switchToStageOne={this.switchToStageOne}
+                        loading={loading}
+                        unboundNext_={this.unboundNext_WithoutLoad}>
+                    </EmailAuthStageTwoForm>
+                );
+                progressPercent = 30;
+                break;
+            case 3:
+                stageFormComponent = (
+                    <EmailAuthStageThreeForm
+                        signUpToken={signUpToken}
+                        setLoading={this.setLoading}
+                        loading={loading}
+                        unboundNext_={this.unboundNext_LoadDeck}>
+                    </EmailAuthStageThreeForm>
+                );
+                progressPercent = 80;
+                break;
+            default:
+                throw Error("Invalid sign up stage.");
+        }
 
         return (
             <div>
-                <Form onSubmit={this.signup} className="form">
-                    <Form.Item className="formItem" key={1}>
-                        <Tooltip title="6 - 64 characters" {...tooltipProps}>
-                            <div onBlur={this.onBlur}>
-                                {
-                                    getFieldDecorator("username",
-                                        {
-                                            validateTrigger: fieldValidationTriggers.username,
-                                            rules: [
-                                                { min: 6, required: true, message: "Must be at least 6 characters." },
-                                                { max: 64, message: "Username exceeds 64 character limit." }
-                                            ]
-                                        }
-                                    )(
-                                        <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
-                                            placeholder="Username" id="username"
-                                        />
-                                    )
-                                }
-                            </div>
-                        </Tooltip>
-                    </Form.Item>
-                    <Form.Item className="formItem" key={2}>
+                <Progress percent={progressPercent} size="small"></Progress>
+                {stageFormComponent}
+            </div>
+        )
+    }
+}
+
+class EmailAuthStageOne extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            fieldValidationTriggers: {
+                email: "onBlur"
+            }
+        }
+        this.onBlur = onBlur.bind(this);
+        this.next_ = this.props.unboundNext_.bind(this);
+    }
+
+    render() {
+        const { switchToLogin, loading } = this.props;
+        const { getFieldDecorator } = this.props.form;
+        const { fieldValidationTriggers } = this.state;
+
+        return (
+            <div>
+                <Form onSubmit={this.next_} className="form">
+                    <Form.Item className="formItem" key={"EmailAuthStageOneEmail"}>
                         <div onBlur={this.onBlur}>
                             {
                                 getFieldDecorator("email",
@@ -234,7 +311,113 @@ class SignUp extends React.Component {
                             }
                         </div>
                     </Form.Item>
-                    <Form.Item className="formItem" key={3}>
+
+                    <Form.Item className="formItem">
+                        <Button
+                            className="formButton"
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}>
+                            Next
+                    </Button>
+                    </Form.Item>
+                </Form>
+                <span className="footer">
+                    <p className="footerText">Have an account?</p>
+                    <Button className="footerButton" size="small" type="link" onClick={switchToLogin}>
+                        Log in
+                    </Button>
+                </span>
+
+            </div>
+        );
+    }
+}
+
+class EmailAuthStageTwo extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            fieldValidationTriggers: {
+                validationCode: "onBlur"
+            }
+        }
+        this.onBlur = onBlur.bind(this);
+        this.next_ = this.props.unboundNext_.bind(this);
+    }
+
+    render() {
+        const { switchToStageOne, loading } = this.props;
+        const { getFieldDecorator } = this.props.form;
+        const { fieldValidationTriggers } = this.state;
+
+        return (
+            <div>
+                <Form onSubmit={this.next_} className="form">
+                    <Form.Item className="formItem" key={"EmailAuthStageOneVerificationCode"}>
+                        <div onBlur={this.onBlur}>
+                            {
+                                getFieldDecorator("verificationCode",
+                                    {
+                                        validateTrigger: fieldValidationTriggers.verificationCode,
+                                        rules: [
+                                            {min: 10, max:10, required: true, message: "Wrong length verification code."}
+                                        ]
+                                    }
+                                )(
+                                    <Input prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                        placeholder="Verification code"
+                                    />
+                                )
+                            }
+                        </div>
+                    </Form.Item>
+                    <Form.Item className="formItem">
+                        <Button
+                            className="formButton"
+                            type="primary"
+                            htmlType="submit"
+                            loading={loading}>
+                            Next
+                        </Button>
+                    </Form.Item>
+                </Form>
+                <span className="footer">
+                    <p className="footerText">Sent to wrong email?</p>
+                    <Button className="footerButton" size="small" type="link" onClick={switchToStageOne}>
+                        Back
+                    </Button>
+                </span>
+
+            </div>
+        );
+    }
+}
+
+class EmailAuthStageThree extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            fieldValidationTriggers: {
+                password: "onBlur",
+                passwordValidation: "onBlur"
+            }
+        }
+        this.onBlur = onBlur.bind(this);
+        this.next_ = this.props.unboundNext_.bind(this);
+    }
+
+    render() {
+        const { loading } = this.props;
+        const { getFieldDecorator } = this.props.form;
+        const { fieldValidationTriggers } = this.state;
+
+        const tooltipProps = { placement: "right", trigger: "focus", hasFeedback: true };
+
+        return (
+            <div>
+                <Form onSubmit={this.next_} className="form">
+                    <Form.Item className="formItem" key={"EmailAuthStageThreePassword"}>
                         <Tooltip title="8 - 50 characters." {...tooltipProps}>
                             <div onBlur={this.onBlur}>
                                 {
@@ -251,30 +434,42 @@ class SignUp extends React.Component {
                             </div>
                         </Tooltip>
                     </Form.Item>
+                    <Form.Item className="formItem" key={"EmailAuthStageThreePasswordValidation"}>
+                        <Tooltip title="8 - 50 characters." {...tooltipProps}>
+                            <div onBlur={this.onBlur}>
+                                {
+                                    getFieldDecorator("passwordValidation",
+                                        {
+                                            validateTrigger: fieldValidationTriggers.passwordValidation,
+                                            rules: [
+                                                { min: 8, required: true, message: "Must be at least 8 characters." },
+                                                { max: 50, message: "Password exceeds 50 character limit." }
+                                            ]
+                                        }
+                                    )(<Input.Password placeholder="Re-enter your password" />)
+                                }
+                            </div>
+                        </Tooltip>
+                    </Form.Item>
                     <Form.Item className="formItem">
                         <Button
                             className="formButton"
                             type="primary"
                             htmlType="submit"
                             loading={loading}>
-                            Sign up
+                            Finish sign up
                         </Button>
                     </Form.Item>
                 </Form>
-                <span className="footer">
-                    <p className="footerText">Have an account?</p>
-                    <Button className="footerButton" size="small" type="link" onClick={switchToLogin}>
-                        Log in
-                    </Button>
-                </span>
-
             </div>
-        )
+        );
     }
 }
 
-const LoginForm = Form.create({ name: 'login' })(withResponseHandlers(Login));
-const SignUpForm = Form.create({ name: 'signup' })(withResponseHandlers(SignUp));
+const LoginForm = Form.create({ name: 'Login' })(Login);
+const EmailAuthStageOneForm = Form.create({ name: 'SignUpStageOne' })(EmailAuthStageOne);
+const EmailAuthStageTwoForm = Form.create({ name: 'SignUpStageTwo' })(EmailAuthStageTwo);
+const EmailAuthStageThreeForm = Form.create({ name: 'SignUpStageThree' })(EmailAuthStageThree);
 
 class AuthenticationModal extends React.Component {
     constructor(props) {
@@ -288,7 +483,28 @@ class AuthenticationModal extends React.Component {
         Object.freeze(this.intentions);
 
         this.state = {
-            intention: this.intentions.login
+            intention: this.intentions.login,
+            shouldWarnBeforeModalClose: false
+        }
+    }
+
+    setShouldWarnBeforeModalClose = (bool) => {
+        this.setState({ shouldWarnBeforeModalClose: bool });
+    }
+
+    onCancel = () => {
+        const { shouldWarnBeforeModalClose } = this.state;
+        if (shouldWarnBeforeModalClose) {
+            confirm(
+                {
+                    title: "Are you sure you want to exit?",
+                    onOk: () => {
+                        this.props.closeModal();
+                    }
+                }
+            );
+        } else {
+            this.props.closeModal();
         }
     }
 
@@ -311,16 +527,14 @@ class AuthenticationModal extends React.Component {
                 break;
             case this.intentions.signup:
                 activeForm = (
-                    <SignUpForm {...this.props}
-                        switchToLogin={
-                            () => {
-                                this.setState({ intention: this.intentions.login })
-                            }
-                        }>
-                    </SignUpForm>
+                    <SignUp {...this.props}
+                        switchToLogin={() => this.setState({ intention: this.intentions.login })}
+                        setShouldWarnBeforeModalClose={this.setShouldWarnBeforeModalClose}>
+                    </SignUp>
                 );
                 titleText = "Sign Up";
                 break;
+            // Need case this.intentions.resetPassword
             default:
                 throw Error("Invalid authentication component state!");
         }
@@ -332,13 +546,14 @@ class AuthenticationModal extends React.Component {
         );
 
         return (
+            // Need closeModal to sometimes warn the user!
             <ErrorBoundary>
                 <Modal
                     width={300}
                     title={title}
                     visible={this.props.visible}
                     closable={false}
-                    onCancel={this.props.closeModal}
+                    onCancel={this.onCancel}
                     footer={null}>
                     {activeForm}
                 </Modal>
