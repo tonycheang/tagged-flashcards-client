@@ -83,6 +83,4 @@ async function dispatchWithRedirect(path, method, data, options) {
     return error;
 }
 
-// dispatchTries("/api/get-deck", "POST", {}, { returnresponsePath: true }).then(res => console.log(res));
-
 export { dispatch, dispatchWithRedirect };
