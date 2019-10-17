@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Button, Form, Input, Steps, Divider, Icon, message, Tooltip } from "antd";
+import { Modal, Button, Form, Input, Steps, Icon, message, Tooltip } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 import './AuthenticationModal.css';
 import { dispatchWithRedirect } from './Dispatch';
@@ -27,7 +27,10 @@ function configureNext_(path, handlers) {
     return async function next_(event) {
 
         function defaultErrorHandler(err) {
-            this.props.setLoading(false);
+            if (this.props.setLoading && typeof this.props.setLoading === "function")
+                this.props.setLoading(false);
+            if (this.setLoading && typeof this.setLoading === "function")
+                this.setLoading(false);
             message.error("Opps! Something went wrong.");
         }
 
@@ -48,11 +51,14 @@ function configureNext_(path, handlers) {
 
         if (errObj) return;
 
-        const { signUpToken } = this.props;
-        if (signUpToken)
-            objToSend['signUpToken'] = signUpToken;
+        const { emailAuthToken } = this.props;
+        if (emailAuthToken)
+            objToSend['emailAuthToken'] = emailAuthToken;
 
-        this.props.setLoading(true);
+        if (this.props.setLoading && typeof this.props.setLoading === "function")
+            this.props.setLoading(true);
+        if (this.setLoading && typeof this.setLoading === "function")
+            this.setLoading(true);
 
         return dispatchWithRedirect(path, "POST", objToSend)
             .then(data => handlers.onSuccess ? handlers.onSuccess(data) : console.log(data))
@@ -94,6 +100,10 @@ class Login extends React.Component {
         }
     }
 
+    setLoading = (bool) => {
+        this.setState({ loading: bool });
+    }
+
     render() {
         const { getFieldDecorator } = this.props.form;
         const { switchToSignup, loading } = this.props;
@@ -104,9 +114,12 @@ class Login extends React.Component {
                 <Form onSubmit={this.login} className="form">
                     <Form.Item className="formItem" key={1}>
                         {
-                            getFieldDecorator("username",
+                            getFieldDecorator("email",
                                 {
-                                    rules: [{ required: true, message: "Please enter your username or email." }]
+                                    rules: [
+                                        { required: true, type: "email", message: "Must be a valid email address." },
+                                        { max: 254, message: "Email exceeds 254 character limit." }
+                                    ]
                                 }
                             )(
                                 <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
@@ -163,7 +176,7 @@ class SignUp extends React.Component {
         super(props);
         this.state = {
             signUpStage: 1,
-            signUpToken: undefined,
+            emailAuthToken: undefined,
             loading: false
         }
         
@@ -191,17 +204,17 @@ class SignUp extends React.Component {
             const { signUpStage } = this.state;
             switch (signUpStage) {
                 case 1:
-                    if (!data.body || !data.body.signUpToken)
+                    if (!data.body || !data.body.emailAuthToken)
                         return message.warn("Opps! Server did not pass a token. Please retry.");
 
-                    this.setState({ signUpStage: 2, signUpToken: data.body.signUpToken });
+                    this.setState({ signUpStage: 2, emailAuthToken: data.body.emailAuthToken });
                     this.props.setShouldWarnBeforeModalClose(true);
                     break;
                 case 2:
-                    if (!data.body || !data.body.signUpToken)
+                    if (!data.body || !data.body.emailAuthToken)
                         return message.warn("Opps! Server did not pass a token. Please retry.");
 
-                    this.setState({ signUpStage: 3, signUpToken: data.body.signUpToken });
+                    this.setState({ signUpStage: 3, emailAuthToken: data.body.emailAuthToken });
                     break;
                 case 3:
                     const MESSAGE_ACTIVE_TIME = 2.5;
@@ -225,7 +238,7 @@ class SignUp extends React.Component {
 
     render() {
         const { switchToLogin } = this.props;
-        const { signUpStage, signUpToken, loading } = this.state;
+        const { signUpStage, emailAuthToken, loading } = this.state;
 
         let stageFormComponent;
         switch (signUpStage) {
@@ -242,7 +255,7 @@ class SignUp extends React.Component {
             case 2:
                 stageFormComponent = (
                     <EmailAuthStageTwoForm
-                        signUpToken={signUpToken}
+                        emailAuthToken={emailAuthToken}
                         setLoading={this.setLoading}
                         switchToStageOne={this.switchToStageOne}
                         loading={loading}
@@ -253,7 +266,7 @@ class SignUp extends React.Component {
             case 3:
                 stageFormComponent = (
                     <EmailAuthStageThreeForm
-                        signUpToken={signUpToken}
+                        emailAuthToken={emailAuthToken}
                         setLoading={this.setLoading}
                         loading={loading}
                         unboundNext_={this.unboundNext_LoadDeck}>
