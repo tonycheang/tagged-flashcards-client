@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, Button, Form, Input, Progress, Icon, message, Tooltip } from "antd";
+import { Modal, Button, Form, Input, Steps, Divider, Icon, message, Tooltip } from "antd";
 import ErrorBoundary from './ErrorBoundary';
 import './AuthenticationModal.css';
 import { dispatchWithRedirect } from './Dispatch';
@@ -9,15 +9,18 @@ import Schema from 'async-validator';
 Schema.warning = function () { };
 
 const { confirm } = Modal;
+const { Step } = Steps;
 
 function configureNext_(path, handlers) {
     /* 
         Function to be configured, then bound by components. 
 
         antd's validateFields needs the proper ref to a form component
-        This function allows 'layering' of path and handlers higher up;
-        the binding of 'this' in Form.create() components will allow
-        validateFields to work properly.
+        This function allows 'layering' of path and handlers higher up
+        in the component tree. These then pass an unbound version of
+        this function down to its children. The binding of 'this' in 
+        Form.create() components will allow validateFields to work 
+        properly.
     */
 
 
@@ -179,8 +182,9 @@ class SignUp extends React.Component {
         this.setState({ loading: false });
 
         if (data.error || data.response.status >= 300) {
-            console.log(data);
-            return message.warn("Opps, something went wrong!");
+            const errorMessage = data.body.message || "Opps, something went wrong!";
+            const EXPIRY_INTERVAL = 3;
+            return message.error(errorMessage, EXPIRY_INTERVAL);
         }
 
         if (data.response && data.response.status < 300 && data.response.status >= 200) {
@@ -211,7 +215,7 @@ class SignUp extends React.Component {
     }
 
     switchToStageOne = () => {
-        this.setShouldWarnBeforeModalClose(true);
+        this.props.setShouldWarnBeforeModalClose(false);
         this.setState({ signUpStage: 1 });
     }
 
@@ -223,7 +227,7 @@ class SignUp extends React.Component {
         const { switchToLogin } = this.props;
         const { signUpStage, signUpToken, loading } = this.state;
 
-        let stageFormComponent, progressPercent;
+        let stageFormComponent;
         switch (signUpStage) {
             case 1:
                 stageFormComponent = (
@@ -234,7 +238,6 @@ class SignUp extends React.Component {
                         unboundNext_={this.unboundNext_WithoutLoad}>
                     </EmailAuthStageOneForm>
                 );
-                progressPercent = 0;
                 break;
             case 2:
                 stageFormComponent = (
@@ -246,7 +249,6 @@ class SignUp extends React.Component {
                         unboundNext_={this.unboundNext_WithoutLoad}>
                     </EmailAuthStageTwoForm>
                 );
-                progressPercent = 30;
                 break;
             case 3:
                 stageFormComponent = (
@@ -257,7 +259,6 @@ class SignUp extends React.Component {
                         unboundNext_={this.unboundNext_LoadDeck}>
                     </EmailAuthStageThreeForm>
                 );
-                progressPercent = 80;
                 break;
             default:
                 throw Error("Invalid sign up stage.");
@@ -265,7 +266,15 @@ class SignUp extends React.Component {
 
         return (
             <div>
-                <Progress percent={progressPercent} size="small"></Progress>
+                <Steps 
+                    className="progressBar"
+                    size="small" 
+                    initial={1} 
+                    current={signUpStage}>
+                    <Step icon={<Icon type="mail" />} />
+                    <Step icon={<Icon type="safety-certificate" />} />
+                    <Step icon={<Icon type="unlock" />} />
+                </Steps>
                 {stageFormComponent}
             </div>
         )
@@ -318,7 +327,7 @@ class EmailAuthStageOne extends React.Component {
                             type="primary"
                             htmlType="submit"
                             loading={loading}>
-                            Next
+                            Send verification code
                     </Button>
                     </Form.Item>
                 </Form>
@@ -378,7 +387,7 @@ class EmailAuthStageTwo extends React.Component {
                             type="primary"
                             htmlType="submit"
                             loading={loading}>
-                            Next
+                            Verify
                         </Button>
                     </Form.Item>
                 </Form>
@@ -403,8 +412,20 @@ class EmailAuthStageThree extends React.Component {
                 passwordValidation: "onBlur"
             }
         }
+        this.passwordEntered = "";
         this.onBlur = onBlur.bind(this);
         this.next_ = this.props.unboundNext_.bind(this);
+    }
+
+    // Functions for async-validator.
+    recordPasswordField = (rule, password, callback) => {
+        this.passwordEntered = password;
+        callback();
+    }
+
+    checkMatchingPasswords = (rule, passwordValidation, callback) => {
+        // It has an odd callback() usage.
+        this.passwordEntered === passwordValidation ? callback() : callback(false);
     }
 
     render() {
@@ -426,7 +447,8 @@ class EmailAuthStageThree extends React.Component {
                                             validateTrigger: fieldValidationTriggers.password,
                                             rules: [
                                                 { min: 8, required: true, message: "Must be at least 8 characters." },
-                                                { max: 50, message: "Password exceeds 50 character limit." }
+                                                { max: 50, message: "Password exceeds 50 character limit." },
+                                                { validator: this.recordPasswordField }
                                             ]
                                         }
                                     )(<Input.Password placeholder="Password" />)
@@ -443,7 +465,8 @@ class EmailAuthStageThree extends React.Component {
                                             validateTrigger: fieldValidationTriggers.passwordValidation,
                                             rules: [
                                                 { min: 8, required: true, message: "Must be at least 8 characters." },
-                                                { max: 50, message: "Password exceeds 50 character limit." }
+                                                { max: 50, message: "Password exceeds 50 character limit." },
+                                                { validator: this.checkMatchingPasswords, message: "Passwords must match." }
                                             ]
                                         }
                                     )(<Input.Password placeholder="Re-enter your password" />)
@@ -457,7 +480,7 @@ class EmailAuthStageThree extends React.Component {
                             type="primary"
                             htmlType="submit"
                             loading={loading}>
-                            Finish sign up
+                            Sign up
                         </Button>
                     </Form.Item>
                 </Form>
