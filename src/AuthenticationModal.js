@@ -25,6 +25,7 @@ function configureNext_(path, handlers) {
 
 
     return async function next_(event) {
+        event.preventDefault();
 
         function defaultErrorHandler(err) {
             if (this.props.setLoading && typeof this.props.setLoading === "function")
@@ -34,7 +35,6 @@ function configureNext_(path, handlers) {
             message.error("Opps! Something went wrong.");
         }
 
-        event.preventDefault();
 
         // validateFields eats thrown errors in the callback.
         // Use "flag" errObj to save info about error instead.
@@ -76,26 +76,23 @@ class Login extends React.Component {
             error: false,
             errorMessage: ""
         }
-        const handlers = {
-            onSuccess: this.onSuccess,
-            finally: this.props.loadDeck
-        }
-        this.login = configureNext_("/auth/login", handlers).bind(this);
+
+        this.login = configureNext_("/auth/login", { onSuccess: this.onSuccess }).bind(this);
     }
 
-    onSuccess = async (response) => {
+    onSuccess = async (data) => {
         this.setState({ loading: false });
-        const body = await response.json();
+        const body = await data.json();
         const SECONDS_TILL_CLOSE = 2.5;
-
-        if (response.status >= 400) {
+        if (data.response.status >= 400) {
             message.destroy();
-            message.error(body.error, SECONDS_TILL_CLOSE);
+            message.error(body.message, SECONDS_TILL_CLOSE);
             // These state variables are passed down as props.
             this.setState({ error: true, errorMessage: body.error });
         } else {
             message.destroy();
             message.success(body.message, SECONDS_TILL_CLOSE);
+            this.props.loadDeck();
             this.props.closeModal();
         }
     }
@@ -106,11 +103,11 @@ class Login extends React.Component {
 
     render() {
         const { getFieldDecorator } = this.props.form;
-        const { switchToSignup, loading } = this.props;
+        const { switchToSignup, switchToResetPassword, loading } = this.props;
 
         return (
             <div>
-                <p className="purpose"> To save your deck remotely. </p>
+                <p className="purpose"> Save and load your deck remotely. </p>
                 <Form onSubmit={this.login} className="form">
                     <Form.Item className="formItem" key={1}>
                         {
@@ -145,10 +142,12 @@ class Login extends React.Component {
                         </Button>
                     </Form.Item>
                 </Form>
-                <span className="footer">
-                    <p className="footerText">Don't have an account?</p>
-                    <Button className="footerButton" size="small" type="link" onClick={switchToSignup}>
-                        Sign up
+                <span className="footerButtonGroup">
+                    <Button style={{ color: "#8c8c8c" }} className="footerButton" size="small" type="link" onClick={switchToResetPassword}>
+                        Forgot Password
+                    </Button>
+                    <Button style={{ color: "#40a9ff" }} className="footerButton" size="small" type="link" onClick={switchToSignup}>
+                        Sign Up
                     </Button>
                 </span>
             </div>
@@ -171,126 +170,147 @@ function onBlur(event) {
     });
 }
 
-class SignUp extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            signUpStage: 1,
-            emailAuthToken: undefined,
-            loading: false
+function configureEmailAuthFlow({ url, onCompletion, text }) {
+    return class extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                stage: 1,
+                emailAuthToken: undefined,
+                loading: false,
+                email: ""
+            }
+
+            this.unboundNext_ = configureNext_(url, { onSuccess: this.onSuccess });
         }
-        
-        const handlersWithLoad = {
-            onSuccess: this.onSuccess,
-            finally: this.props.saveDeck
-        }
-        const handlersWithoutLoad = {
-            onSuccess: this.onSuccess
-        }
-        this.unboundNext_LoadDeck = configureNext_("/auth/signup", handlersWithLoad)
-        this.unboundNext_WithoutLoad = configureNext_("/auth/signup", handlersWithoutLoad);
-    }
+    
+        onSuccess = (data) => {
+            this.setState({ loading: false });
+    
+            if (data.error || data.response.status >= 300) {
+                const errorMessage = data.body.message || "Opps, something went wrong!";
+                const EXPIRY_INTERVAL = 3;
+                return message.error(errorMessage, EXPIRY_INTERVAL);
+            }
+    
+            if (data.response && data.response.status < 300 && data.response.status >= 200) {
+                const { stage } = this.state;
+                switch (stage) {
+                    case 1:
+                        if (!data.body || !data.body.emailAuthToken)
+                            return message.warn("Opps! Server did not pass a token. Please retry.");
+    
+                        this.setState({ stage: 2, emailAuthToken: data.body.emailAuthToken });
+                        this.props.setShouldWarnBeforeModalClose(true);
+                        break;
+                    case 2:
+                        if (!data.body || !data.body.emailAuthToken)
+                            return message.warn("Opps! Server did not pass a token. Please retry.");
+    
+                        this.setState({ stage: 3, emailAuthToken: data.body.emailAuthToken });
+                        break;
+                    case 3:
+                        const MESSAGE_ACTIVE_TIME = 2.5;
+                        message.success(text.onSuccess, MESSAGE_ACTIVE_TIME);
 
-    onSuccess = (data) => {
-        this.setState({ loading: false });
+                        if (onCompletion.switchToLogin)
+                            this.props.switchToLogin();
 
-        if (data.error || data.response.status >= 300) {
-            const errorMessage = data.body.message || "Opps, something went wrong!";
-            const EXPIRY_INTERVAL = 3;
-            return message.error(errorMessage, EXPIRY_INTERVAL);
-        }
-
-        if (data.response && data.response.status < 300 && data.response.status >= 200) {
-            const { signUpStage } = this.state;
-            switch (signUpStage) {
-                case 1:
-                    if (!data.body || !data.body.emailAuthToken)
-                        return message.warn("Opps! Server did not pass a token. Please retry.");
-
-                    this.setState({ signUpStage: 2, emailAuthToken: data.body.emailAuthToken });
-                    this.props.setShouldWarnBeforeModalClose(true);
-                    break;
-                case 2:
-                    if (!data.body || !data.body.emailAuthToken)
-                        return message.warn("Opps! Server did not pass a token. Please retry.");
-
-                    this.setState({ signUpStage: 3, emailAuthToken: data.body.emailAuthToken });
-                    break;
-                case 3:
-                    const MESSAGE_ACTIVE_TIME = 2.5;
-                    message.success("Signed up successfully! Automatically logged in.", MESSAGE_ACTIVE_TIME);
-                    this.props.closeModal();
-                    break;
-                default:
-                    throw Error("Invalid sign up stage.");
+                        if (onCompletion.closeModal) 
+                            this.props.closeModal();
+                        
+                        if (onCompletion.save) 
+                            this.props.saveDeck();
+                        
+                        break;
+                    default:
+                        throw Error("Invalid email auth stage.");
+                }
             }
         }
-    }
-
-    switchToStageOne = () => {
-        this.props.setShouldWarnBeforeModalClose(false);
-        this.setState({ signUpStage: 1 });
-    }
-
-    setLoading = (bool) => {
-        this.setState({ loading: bool });
-    }
-
-    render() {
-        const { switchToLogin } = this.props;
-        const { signUpStage, emailAuthToken, loading } = this.state;
-
-        let stageFormComponent;
-        switch (signUpStage) {
-            case 1:
-                stageFormComponent = (
-                    <EmailAuthStageOneForm
-                        switchToLogin={switchToLogin}
-                        setLoading={this.setLoading}
-                        loading={loading}
-                        unboundNext_={this.unboundNext_WithoutLoad}>
-                    </EmailAuthStageOneForm>
-                );
-                break;
-            case 2:
-                stageFormComponent = (
-                    <EmailAuthStageTwoForm
-                        emailAuthToken={emailAuthToken}
-                        setLoading={this.setLoading}
-                        switchToStageOne={this.switchToStageOne}
-                        loading={loading}
-                        unboundNext_={this.unboundNext_WithoutLoad}>
-                    </EmailAuthStageTwoForm>
-                );
-                break;
-            case 3:
-                stageFormComponent = (
-                    <EmailAuthStageThreeForm
-                        emailAuthToken={emailAuthToken}
-                        setLoading={this.setLoading}
-                        loading={loading}
-                        unboundNext_={this.unboundNext_LoadDeck}>
-                    </EmailAuthStageThreeForm>
-                );
-                break;
-            default:
-                throw Error("Invalid sign up stage.");
+    
+        switchToStageOne = () => {
+            this.props.setShouldWarnBeforeModalClose(false);
+            this.setState({ stage: 1 });
         }
-
-        return (
-            <div>
-                <Steps 
-                    className="progressBar"
-                    size="small" 
-                    initial={1} 
-                    current={signUpStage}>
-                    <Step icon={<Icon type="mail" />} />
-                    <Step icon={<Icon type="safety-certificate" />} />
-                    <Step icon={<Icon type="unlock" />} />
-                </Steps>
-                {stageFormComponent}
-            </div>
-        )
+    
+        setLoading = (bool) => {
+            this.setState({ loading: bool });
+        }
+    
+        render() {
+            const { switchToLogin } = this.props;
+            const { stage, emailAuthToken, loading, email } = this.state;
+    
+            let infoText, stageFormComponent;
+            switch (stage) {
+                case 1:
+                    const { stageOne } = text;
+                    stageFormComponent = (
+                        <EmailAuthStageOneForm
+                            text={stageOne}
+                            switchToLogin={switchToLogin}
+                            setLoading={this.setLoading}
+                            setEmail={(email) => this.setState({ email })}
+                            loading={loading}
+                            unboundNext_={this.unboundNext_}>
+                        </EmailAuthStageOneForm>
+                    );
+                    break;
+                case 2:
+                    const { stageTwo } = text;
+                    infoText = (
+                        <p className="purpose" style={{ marginTop: "0px", marginBottom: "10px" }}>
+                            Sent to {email} 
+                        </p>
+                    );
+                    stageFormComponent = (
+                        <EmailAuthStageTwoForm
+                            text={stageTwo}
+                            emailAuthToken={emailAuthToken}
+                            setLoading={this.setLoading}
+                            switchToStageOne={this.switchToStageOne}
+                            loading={loading}
+                            unboundNext_={this.unboundNext_}>
+                        </EmailAuthStageTwoForm>
+                    );
+                    break;
+                case 3:
+                    const { stageThree } = text;
+                    stageFormComponent = (
+                        <EmailAuthStageThreeForm
+                            text={stageThree}
+                            emailAuthToken={emailAuthToken}
+                            setLoading={this.setLoading}
+                            loading={loading}
+                            unboundNext_={this.unboundNext_}>
+                        </EmailAuthStageThreeForm>
+                    );
+                    break;
+                default:
+                    throw Error("Invalid email auth stage.");
+            }
+    
+            return (
+                <div>
+                    <span>
+                        <Steps 
+                            className="progressBar"
+                            size="small" 
+                            initial={1} 
+                            current={stage}>
+                            <Step icon={<Icon type="mail" />} />
+                            <Step icon={<Icon type="safety-certificate" />} />
+                            <Step icon={<Icon type="unlock" />} />
+                        </Steps>
+                    </span>
+                    <span className="purpose">
+                        {infoText}
+                    </span>
+                    {stageFormComponent}
+                </div>
+            )
+        }
     }
 }
 
@@ -306,14 +326,21 @@ class EmailAuthStageOne extends React.Component {
         this.next_ = this.props.unboundNext_.bind(this);
     }
 
+    onSubmit = (event) => {
+        this.next_(event);
+        this.props.form.validateFields((err, vals) => {
+            this.props.setEmail(vals.email);
+        });
+    }
+
     render() {
-        const { switchToLogin, loading } = this.props;
+        const { switchToLogin, loading, text } = this.props;
         const { getFieldDecorator } = this.props.form;
         const { fieldValidationTriggers } = this.state;
 
         return (
             <div>
-                <Form onSubmit={this.next_} className="form">
+                <Form onSubmit={this.onSubmit} className="form">
                     <Form.Item className="formItem" key={"EmailAuthStageOneEmail"}>
                         <div onBlur={this.onBlur}>
                             {
@@ -345,12 +372,11 @@ class EmailAuthStageOne extends React.Component {
                     </Form.Item>
                 </Form>
                 <span className="footer">
-                    <p className="footerText">Have an account?</p>
+                    <p className="footerText">{text.footer}</p>
                     <Button className="footerButton" size="small" type="link" onClick={switchToLogin}>
                         Log in
                     </Button>
                 </span>
-
             </div>
         );
     }
@@ -387,7 +413,7 @@ class EmailAuthStageTwo extends React.Component {
                                         ]
                                     }
                                 )(
-                                    <Input prefix={<Icon type="mail" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                    <Input prefix={<Icon type="safety-certificate" style={{ color: 'rgba(0,0,0,.25)' }} />}
                                         placeholder="Verification code"
                                     />
                                 )
@@ -442,7 +468,7 @@ class EmailAuthStageThree extends React.Component {
     }
 
     render() {
-        const { loading } = this.props;
+        const { loading, text } = this.props;
         const { getFieldDecorator } = this.props.form;
         const { fieldValidationTriggers } = this.state;
 
@@ -493,7 +519,7 @@ class EmailAuthStageThree extends React.Component {
                             type="primary"
                             htmlType="submit"
                             loading={loading}>
-                            Sign up
+                            {text.button}
                         </Button>
                     </Form.Item>
                 </Form>
@@ -503,10 +529,49 @@ class EmailAuthStageThree extends React.Component {
 }
 
 const LoginForm = Form.create({ name: 'Login' })(Login);
-const EmailAuthStageOneForm = Form.create({ name: 'SignUpStageOne' })(EmailAuthStageOne);
-const EmailAuthStageTwoForm = Form.create({ name: 'SignUpStageTwo' })(EmailAuthStageTwo);
-const EmailAuthStageThreeForm = Form.create({ name: 'SignUpStageThree' })(EmailAuthStageThree);
+const EmailAuthStageOneForm = Form.create({ name: 'EmailAuthStageOne' })(EmailAuthStageOne);
+const EmailAuthStageTwoForm = Form.create({ name: 'EmailAuthStageTwo' })(EmailAuthStageTwo);
+const EmailAuthStageThreeForm = Form.create({ name: 'EmailAuthStageThree' })(EmailAuthStageThree);
 
+const signUpText = {
+    stageOne: {
+        footer: "Have an account?"
+    },
+    stageThree: {
+        button: "Sign Up"
+    },
+    onSuccess: "Signed up successfully! Automatically logged in."
+}
+
+const SignUp = configureEmailAuthFlow({ 
+    url: "/auth/signup", 
+    onCompletion: {
+        save: true,
+        closeModal: true,
+        switchToLogin: false
+    }, 
+    text: signUpText
+});
+
+const resetPasswordText = {
+    stageOne: {
+        footer: "Remember your password?"
+    },
+    stageThree: {
+        button: "Change Password"
+    },
+    onSuccess: "Password reset successfully! Please log in."
+}
+
+const ResetPassword = configureEmailAuthFlow({ 
+    url: "/auth/forgot-password", 
+    onCompletion: {
+        save: false,
+        closeModal: false,
+        switchToLogin: true
+    },
+    text: resetPasswordText
+});
 class AuthenticationModal extends React.Component {
     constructor(props) {
         super(props);
@@ -552,11 +617,8 @@ class AuthenticationModal extends React.Component {
             case this.intentions.login:
                 activeForm = (
                     <LoginForm {...this.props}
-                        switchToSignup={
-                            () => {
-                                this.setState({ intention: this.intentions.signup })
-                            }
-                        }>
+                        switchToSignup={ () => this.setState({ intention: this.intentions.signup }) }
+                        switchToResetPassword={ () => this.setState({ intention: this.intentions.resetPassword }) }>
                     </LoginForm>
                 );
                 titleText = "Log In";
@@ -570,7 +632,15 @@ class AuthenticationModal extends React.Component {
                 );
                 titleText = "Sign Up";
                 break;
-            // Need case this.intentions.resetPassword
+            case this.intentions.resetPassword:
+                activeForm = (
+                    <ResetPassword {...this.props}
+                        switchToLogin={() => this.setState({ intention: this.intentions.login })}
+                        setShouldWarnBeforeModalClose={this.setShouldWarnBeforeModalClose}>
+                    </ResetPassword>
+                );
+                titleText = "Password Recovery";
+                break;
             default:
                 throw Error("Invalid authentication component state!");
         }
@@ -582,7 +652,6 @@ class AuthenticationModal extends React.Component {
         );
 
         return (
-            // Need closeModal to sometimes warn the user!
             <ErrorBoundary>
                 <Modal
                     width={300}
