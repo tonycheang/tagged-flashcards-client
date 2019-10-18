@@ -8,6 +8,8 @@
 .purpose {
     display: flex;
     justify-content: center;
+    text-align: center;
+    word-break: break-all;
     color: #8c8c8c;
     margin-top: -10px;
 }
@@ -46,6 +48,13 @@
     /* display: inline; */
     margin-top: 8px;
     margin-bottom: 2px;
+}
+
+.footerButtonGroup {
+    display: flex;
+    justify-content: space-between;
+    margin: 0px -8px 0px -8px;
+    padding-bottom: 0px;
 }
 
 .footerButton {
