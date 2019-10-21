@@ -160,6 +160,14 @@ class Site extends React.Component {
                     res => {
                         if (res.remoteFailed)
                             message.warning("Saving to remote failed. Saved locally.");
+                        
+                        // If in the middle of making changes to the deck, the session expires,
+                        // Should change UI and notify the user.
+                        if (res.isLoggedIn !== this.state.isLoggedIn) {
+                            this.setState({ isLoggedIn: res.isLoggedIn });
+                            message.warning("Your session has expired. Please log in again.", 5);
+                            this.firstVisitMDPWhileNotLoggedIn = true;
+                        }
                     }
                 ).catch(e => console.log(e));
             }
