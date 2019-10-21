@@ -101,7 +101,7 @@ function saveLocally(data) {
 
 async function save(data) {
     const isLoggedIn = getLoggedInStatus();
-    const response = { destination: undefined, remoteFailed: false, isLoggedIn };
+    const response = { destination: "local", remoteFailed: false, isLoggedIn };
 
     if (isLoggedIn) {
         try {
