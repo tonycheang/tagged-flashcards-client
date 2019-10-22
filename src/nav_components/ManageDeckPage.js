@@ -1,12 +1,13 @@
 import React from 'react';
+import Highlighter from 'react-highlight-words';
 import { Form, Input, Table, Tag } from 'antd';
 import { Card, Divider, Button, Icon } from 'antd';
 import { message, notification, Popconfirm } from 'antd';
-import EditableTagGroup from "./EditableTagGroup";
-import { FlashCard } from "./Deck";
-import Highlighter from 'react-highlight-words';
-import ErrorBoundary from './ErrorBoundary';
 import _ from 'lodash';
+
+import { FlashCard } from "../Deck";
+import EditableTagGroup from "../reuse_components/EditableTagGroup";
+import ErrorBoundary from '../reuse_components/ErrorBoundary';
 
 const { Search } = Input;
 

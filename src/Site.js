@@ -1,15 +1,15 @@
 import React from 'react';
 import { Icon, Menu, Layout, Spin, message } from "antd";
-import ErrorBoundary from './ErrorBoundary';
+import ErrorBoundary from './reuse_components/ErrorBoundary';
 
-import FlashCardApp from './FlashCardApp';
-import ManageDeckPage from './ManageDeckPage';
-import TransferTagsModal from './TransferTagsModal';
-import AuthenticationModal from './AuthenticationModal';
+import FlashCardApp from './nav_components/FlashCardApp';
+import ManageDeckPage from './nav_components/ManageDeckPage';
+import TransferTagsModal from './nav_components/TransferTagsModal';
+import AuthenticationModal from './nav_components/AuthenticationModal';
 import "./Site.css";
 
-import { dispatchWithRedirect } from './Dispatch';
-import DeckController from './DeckController';
+import { dispatchWithRedirect } from './server_communication/Dispatch';
+import DeckController from './server_communication/DeckController';
 
 const { Content } = Layout;
 

@@ -1,8 +1,9 @@
 import React from 'react';
 import { Modal, Button, Form, Input, Steps, Icon, message, Tooltip } from "antd";
-import ErrorBoundary from './ErrorBoundary';
+
+import ErrorBoundary from '../reuse_components/ErrorBoundary';
+import { dispatchWithRedirect } from '../server_communication/Dispatch';
 import './AuthenticationModal.css';
-import { dispatchWithRedirect } from './Dispatch';
 
 // Suppresses internal warnings in the dev console. (Since will warn after each key input).
 import Schema from 'async-validator';

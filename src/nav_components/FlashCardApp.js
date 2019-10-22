@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button, Card, Input, Empty, Form } from 'antd';
-import ErrorBoundary from './ErrorBoundary';
+
+import ErrorBoundary from '../reuse_components/ErrorBoundary';
 import './FlashCardApp.css';
 
 const inputFieldStyle = {

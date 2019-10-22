@@ -1,7 +1,8 @@
 import React from 'react';
 import { Transfer, Modal, Tag, message } from "antd";
-import ErrorBoundary from './ErrorBoundary';
 import _ from 'lodash';
+
+import ErrorBoundary from '../reuse_components/ErrorBoundary';
 
 class TransferTagsModal extends React.Component {
     constructor(props) {

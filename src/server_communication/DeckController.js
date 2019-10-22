@@ -1,4 +1,4 @@
-import { Deck, buildDefaultDeck } from "./Deck.js";
+import { Deck, buildDefaultDeck } from "../Deck.js";
 import { dispatchWithRedirect } from "./Dispatch.js";
 
 function getLoggedInStatus() {

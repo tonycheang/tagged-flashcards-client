@@ -1,6 +1,7 @@
 import React from 'react';
 import { Table, Modal, Switch, message } from "antd";
-import ErrorBoundary from './ErrorBoundary';
+
+import ErrorBoundary from '../reuse_components/ErrorBoundary';
 
 class TagsModal extends React.Component {
     constructor(props) {
