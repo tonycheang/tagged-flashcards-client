@@ -36,7 +36,13 @@ async function dispatchWithRedirect(path, method, data, options) {
             const attemptMethod = suggestedRedirect.method ? suggestedRedirect.method : originalIntent.method;
             
             const latestRes = await dispatch(attemptPath, attemptMethod, attemptData);
-            const latestBody = await latestRes.json();
+            let latestBody;
+
+            try {
+                latestBody = await latestRes.json();
+            } catch(err) {
+                latestBody = "JSON body unavailable!";
+            }
 
             responsePath.push({ latestRes, body: latestBody });
             
