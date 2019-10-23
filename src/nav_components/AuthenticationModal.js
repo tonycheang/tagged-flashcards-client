@@ -2,7 +2,7 @@ import React from 'react';
 import { Modal, Button, Form, Input, Icon, message } from "antd";
 
 import ErrorBoundary from '../reuse_components/ErrorBoundary';
-import { configureEmailAuthFlow, configureNext_ } from '../reuse_components/EmailAuthFlow'
+import { configureEmailAuthFlow, configureNext_, onBlur } from '../reuse_components/EmailAuthFlow'
 import './AuthenticationModal.css';
 
 // Suppresses internal warnings in the dev console. (Since will warn after each key input).
@@ -18,9 +18,13 @@ class Login extends React.Component {
         this.state = {
             loading: false,
             error: false,
-            errorMessage: ""
+            errorMessage: "",
+            fieldValidationTriggers: {
+                email: "onBlur",
+                password: "onBlur"
+            }
         }
-
+        this.onBlur = onBlur.bind(this);
         this.login = configureNext_("/auth/login", { onSuccess: this.onSuccess }).bind(this);
     }
 
@@ -48,33 +52,40 @@ class Login extends React.Component {
     render() {
         const { getFieldDecorator } = this.props.form;
         const { switchToSignup, switchToResetPassword, loading } = this.props;
+        const { fieldValidationTriggers } = this.state;
 
         return (
             <div>
                 <p className="purpose"> Save and load your deck remotely. </p>
                 <Form onSubmit={this.login} className="form">
                     <Form.Item className="formItem" key={1}>
-                        {
-                            getFieldDecorator("email",
-                                {
-                                    rules: [
-                                        { required: true, type: "email", message: "Must be a valid email address." },
-                                        { max: 254, message: "Email exceeds 254 character limit." }
-                                    ]
-                                }
-                            )(
-                                <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
-                                    placeholder="Username or email"
-                                />
-                            )
-                        }
+                        <div onBlur={this.onBlur}>
+                            {
+                                getFieldDecorator("email",
+                                    {
+                                        validateTrigger: fieldValidationTriggers.email,
+                                        rules: [
+                                            { required: true, type: "email", message: "Must be a valid email address." },
+                                            { max: 254, message: "Email exceeds 254 character limit." }
+                                        ]
+                                    }
+                                )(
+                                    <Input prefix={<Icon type="user" style={{ color: 'rgba(0,0,0,.25)' }} />}
+                                        placeholder="Username or email"
+                                    />
+                                )
+                            }
+                        </div>
                     </Form.Item>
                     <Form.Item className="formItem" key={2}>
-                        {getFieldDecorator("password",
-                            {
-                                rules: [{ required: true, message: "Please enter your password." }]
-                            }
-                        )(<Input.Password placeholder="Password" />)}
+                        <div onBlur={this.onBlur}>
+                            {getFieldDecorator("password",
+                                {
+                                    validateTrigger: fieldValidationTriggers.password,
+                                    rules: [{ required: true, message: "Please enter your password." }]
+                                }
+                            )(<Input.Password placeholder="Password" />)}
+                        </div>
                     </Form.Item>
                     <Form.Item className="formItem">
                         <Button

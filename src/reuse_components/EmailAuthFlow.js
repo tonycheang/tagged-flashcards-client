@@ -437,4 +437,4 @@ function configureEmailAuthFlow({ url, onCompletion, text }) {
     }
 }
 
-export { configureEmailAuthFlow, configureNext_ };
+export { configureEmailAuthFlow, configureNext_, onBlur };
