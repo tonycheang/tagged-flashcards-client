@@ -17,8 +17,7 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "predeploy": "npm run build"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -37,7 +36,6 @@
   },
   "devDependencies": {
     "enzyme": "^3.10.0",
-    "enzyme-adapter-react-16": "^1.14.0",
-    "gh-pages": "^2.0.1"
+    "enzyme-adapter-react-16": "^1.14.0"
   }
 }
