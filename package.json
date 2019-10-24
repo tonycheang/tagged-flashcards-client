@@ -1,7 +1,6 @@
 {
   "name": "03-flash-cards",
   "version": "0.1.0",
-  "homepage": "http://tonycheang.github.io/tagged-flashcards-client",
   "private": true,
   "proxy": "https://localhost:5000/",
   "dependencies": {
