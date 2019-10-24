@@ -52,12 +52,22 @@ class Site extends React.Component {
             .finally(__ => this.loadDeck());
     }
 
-    saveDeck = () => {
+    saveDeck = (toSaveDeck) => {
         const { deck } = this.state;
-        DeckController.save(deck).then(res => {
-            this.setState({ isLoggedIn: res.isLoggedIn });
+        DeckController.save(toSaveDeck || deck).then(res => {
             if (res.remoteFailed)
-                message.warning("Attempt to save to remote failed.")
+                message.warning("Saving to remote failed. Saved locally.");
+            
+            if (res.isLoggedIn !== this.state.isLoggedIn) {
+                
+                // If user was logged in, their session has expired.
+                if (this.state.isLoggedIn) {
+                    message.warning("Your session has expired. Please log in again.", 5);
+                    this.firstVisitMDPWhileNotLoggedIn = true;
+                }
+                
+                this.setState({ isLoggedIn: res.isLoggedIn });
+            }
         }).catch(e => console.log(e));
     }
 
@@ -155,21 +165,7 @@ class Site extends React.Component {
                 toSaveDeck.rebuildActive();
                 
                 this.setState({ manageDeckChanged: true });
-                
-                DeckController.save(toSaveDeck).then(
-                    res => {
-                        if (res.remoteFailed)
-                            message.warning("Saving to remote failed. Saved locally.");
-                        
-                        // If in the middle of making changes to the deck, the session expires,
-                        // Should change UI and notify the user.
-                        if (res.isLoggedIn !== this.state.isLoggedIn) {
-                            this.setState({ isLoggedIn: res.isLoggedIn });
-                            message.warning("Your session has expired. Please log in again.", 5);
-                            this.firstVisitMDPWhileNotLoggedIn = true;
-                        }
-                    }
-                ).catch(e => console.log(e));
+                this.saveDeck(toSaveDeck);
             }
         }
 
@@ -184,6 +180,7 @@ class Site extends React.Component {
             // Better for testing.
             const defaultDeck = DeckController.reset();
             this.setState({ deck: defaultDeck, currentCard: defaultDeck.getNextCard() });
+            this.saveDeck(defaultDeck);
             message.destroy();
             message.success("Reset to default deck.");
         };
