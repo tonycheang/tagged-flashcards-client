@@ -1,7 +1,7 @@
 # Tagged Flashcards
 > Hosted [here](https://tagged-flashcards.herokuapp.com/). Please wait a few seconds for Heroku to start up the site if it doesn't immediately load.  
 
-This site was built with language learning in mind, where learners can have up to thousands of cards across a variety of topics. Each flashcard can have multiple tags (e.g. shopping, cooking, easy, fruit, phonetic translation). Leaners can select a group of active tags to build a customized study session.
+This site was built with language learning in mind, where learners can have up to thousands of cards across a variety of topics. Each flashcard can have multiple tags (e.g. shopping, cooking, easy, fruit, phonetic translation). Learners can select a group of active tags to build a customized study session.
 
 ## Technologies & Features
 
@@ -12,7 +12,7 @@ Created using React, Node.js, Express, and Postgres.
 * Selection of a group of active tags
 * Registration and forgot password flow
 * Remote saving to database (up to 5 MB)
-* A default deck of all Japanese hirgana and katakana
+* A default deck of all Japanese hiragana and katakana
 
 > Note: Server repository is a private "super-module".
 
