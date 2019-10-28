@@ -18,13 +18,8 @@ Created using React, Node.js, Express, and Postgres.
 
 ## Future Plans
 
-Should inspiration strike and time permit, I would add the follow features:
+When time permits, I have the follow features in mind:
 
 * Boolean tags query - combine tags using AND, OR, NOT 
 * Performance statistics
 * Spaced repetition review
-
-## Contribution
-
-I primarily created this site for personal learning and usage.  
-If you have a strong desire to contribute, please first email me. Thank you.
