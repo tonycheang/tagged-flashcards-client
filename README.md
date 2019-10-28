@@ -1,9 +1,9 @@
-# &#128451;  Tagged Flashcards
+# Tagged Flashcards
 > Hosted [here](https://tagged-flashcards.herokuapp.com/). Please wait a few seconds for Heroku to start up the site if it doesn't immediately load.  
 
 This site was built with language learning in mind, where learners can have up to thousands of cards across a variety of topics. Each flashcard can have multiple tags (e.g. shopping, cooking, easy, fruit, phonetic translation). Leaners can select a group of active tags to build a customized study session.
 
-# &#128230;  Features
+# Features
 
 * Automatic feedback on correctness
 * Adding, deleting, and modifying cards and their tags
@@ -14,7 +14,7 @@ This site was built with language learning in mind, where learners can have up t
 
 > Note: Server repository is a private "super-module".
 
-# :memo:  Future Plans
+# Future Plans
 
 Should inspiration strike and time permit, I would add the follow features:
 
@@ -22,7 +22,7 @@ Should inspiration strike and time permit, I would add the follow features:
 * Performance statistics
 * Spaced repetition review
 
-# :handshake: Contribution
+# Contribution
 
 I primarily created this site for personal learning and usage.  
 If you have a very, very strong desire to contribute, please first email me. Thank you.
