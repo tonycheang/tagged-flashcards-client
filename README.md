@@ -3,7 +3,9 @@
 
 This site was built with language learning in mind, where learners can have up to thousands of cards across a variety of topics. Each flashcard can have multiple tags (e.g. shopping, cooking, easy, fruit, phonetic translation). Leaners can select a group of active tags to build a customized study session.
 
-# Features
+## Technologies & Features
+
+Created using React, Node.js, Express, and Postgres.  
 
 * Automatic feedback on correctness
 * Adding, deleting, and modifying cards and their tags
@@ -14,7 +16,7 @@ This site was built with language learning in mind, where learners can have up t
 
 > Note: Server repository is a private "super-module".
 
-# Future Plans
+## Future Plans
 
 Should inspiration strike and time permit, I would add the follow features:
 
@@ -22,7 +24,7 @@ Should inspiration strike and time permit, I would add the follow features:
 * Performance statistics
 * Spaced repetition review
 
-# Contribution
+## Contribution
 
 I primarily created this site for personal learning and usage.  
-If you have a very, very strong desire to contribute, please first email me. Thank you.
+If you have a strong desire to contribute, please first email me. Thank you.
