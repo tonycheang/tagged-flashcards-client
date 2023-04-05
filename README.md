@@ -1,5 +1,5 @@
 # Tagged Flashcards
-> Hosted [here](https://tagged-flashcards.herokuapp.com/). Please wait a few seconds for Heroku to start up the site if it doesn't immediately load.  
+> No longer hosted since not actively maintained.
 
 This site was built with language learning in mind, where learners can have up to thousands of cards across a variety of topics. Each flashcard can have multiple tags (e.g. shopping, cooking, easy, fruit, phonetic translation). Learners can select a group of active tags to build a customized study session.
 
